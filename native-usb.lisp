@@ -18,7 +18,18 @@
 #+nil
 (get-usb-busnum-and-devnum #x10c4 #x87a0)
 
+(defmacro with-open-usb ((fd vendor-id &optional (product-id 0))
+			 &body body)
+  `(multiple-value-bind (bus dev)
+       (get-usb-busnum-and-devnum ,vendor-id ,product-id)
+     (let ((,fd (sb-posix:open
+		 (format nil "/dev/bus/usb/~3,'0d/~3,'0d" bus dev)
+		 )))
+       ;; ,@body
+;;        (sb-posix:close ,fd))))
 
+;; (with-open-usb (fd #x10c4 #x87a0)
+;;   )
 
 
 
