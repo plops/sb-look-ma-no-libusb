@@ -1,5 +1,9 @@
+;; strace -f -e open sbcl --noinform --noprint --disable-ldb --no-sysinit --no-userinit --script native-usb.lisp
+
 (defun get-usb-busnum-and-devnum (vendor-id &optional (product-id 0))
   (declare (type (unsigned-byte 16) vendor-id product-id))
+  "Scan all USB devices for matching vendor-id and return its bus and
+device number."
   (let* ((vendor-files (directory "/sys/bus/usb/devices/usb*/*/idVendor"))
 	 (vendors (mapcar #'(lambda (fn)
 			      (with-open-file (s fn)
@@ -18,18 +22,23 @@
 #+nil
 (get-usb-busnum-and-devnum #x10c4 #x87a0)
 
-(defmacro with-open-usb ((fd vendor-id &optional (product-id 0))
+(defmacro with-open-usb ((fd vendor-id &key (stream (gensym "USB-STREAM"))
+			     (product-id 0))
 			 &body body)
+  "Scan all USB devices for matching vendor-id, open the usbfs file
+and make the file descriptor FD available."
   `(multiple-value-bind (bus dev)
        (get-usb-busnum-and-devnum ,vendor-id ,product-id)
-     (let ((,fd (sb-posix:open
-		 (format nil "/dev/bus/usb/~3,'0d/~3,'0d" bus dev)
-		 )))
-       ;; ,@body
-;;        (sb-posix:close ,fd))))
+     (with-open-file (,stream (format nil "/dev/bus/usb/~3,'0d/~3,'0d" bus dev)
+			 :direction :io
+			 :if-exists :overwrite
+			 :element-type '(unsigned-byte 8))
+       (let ((,fd (sb-posix:file-descriptor ,stream)))
+	 ,@body))))
 
-;; (with-open-usb (fd #x10c4 #x87a0)
-;;   )
+#+nil
+(with-open-usb (fd #x10c4 :stream s :product-id #x87a0)
+   (read-byte s))
 
 
 
