@@ -61,3 +61,9 @@ and make the file descriptor FD available."
 
 
 ;; https://github.com/scanlime/ram-tracer/blob/a8f935ca9d275c970a89fca1fed9585f51224edb/host/fastftdi.c
+
+;; definition of ioctls in the kernel
+;; drivers/usb/core/devio.c
+
+;; kernel interface for user level
+;; usbdevice_fs.h
