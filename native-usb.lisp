@@ -67,3 +67,20 @@ and make the file descriptor FD available."
 
 ;; kernel interface for user level
 ;; usbdevice_fs.h
+
+(defun ioc (dir type nr size)
+  "Size is bytes"
+  (let ((nr-bits 8)
+        (type-bits 8)
+        (size-bits 14)
+        (dir-bits 2)
+        (ioc 0))
+    (declare (type (unsigned-byte 32) ioc))
+    (setf (ldb (byte nr-bits 0) ioc) nr
+          (ldb (byte type-bits (+ nr-bits)) ioc) type
+          (ldb (byte size-bits (+ nr-bits type-bits)) ioc) size
+          (ldb (byte dir-bits (+ nr-bits type-bits size-bits)) ioc) (ecase dir
+                                                                     (:none 0)
+                                                                     (:write 1)
+                                                                     (:read 2)))
+    ioc))
