@@ -88,6 +88,8 @@ and make the file descriptor FD available."
 				      "/usr/include/linux/magic.h")
 		    :include-sources ())
 
+;; why is +USBDEVFS-BULK+ NIL?
+
 ;; documentation of the ioctls
 ;; https://www.kernel.org/doc/htmldocs/usb/usbfs-ioctl.html
 (defun ioc (dir type nr size)
