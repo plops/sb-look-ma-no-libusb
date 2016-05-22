@@ -68,6 +68,27 @@ and make the file descriptor FD available."
 ;; kernel interface for user level
 ;; usbdevice_fs.h
 
+(ql:quickload :cl-autowrap)
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (defparameter *spec-path* (merge-pathnames "stage/sb-look-ma-no-libusb/"
+					     (user-homedir-pathname))))
+
+(autowrap:c-include "/usr/include/linux/usbdevice_fs.h"
+		    :spec-path *spec-path*
+		    :exclude-arch ("arm-pc-linux-gnu"
+				   "i386-unknown-freebsd"
+				   "i686-apple-darwin9"
+				   "i686-pc-linux-gnu"
+				   "i686-pc-windows-msvc"
+				   "x86_64-apple-darwin9"
+					;"x86_64-pc-linux-gnu"
+				   "x86_64-pc-windows-msvc"
+				   "x86_64-unknown-freebsd")
+		    :exclude-sources ()
+		    :include-sources ())
+
+;; documentation of the ioctls
+;; https://www.kernel.org/doc/htmldocs/usb/usbfs-ioctl.html
 (defun ioc (dir type nr size)
   "Size is bytes"
   (let ((nr-bits 8)
