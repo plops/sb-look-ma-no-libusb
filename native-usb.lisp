@@ -88,6 +88,24 @@ and make the file descriptor FD available."
 				      "/usr/include/linux/magic.h")
 		    :include-sources ("/usr/include/linux/ioctl.h"))
 
+(autowrap:c-include "usb.h"
+		    :spec-path *spec-path*
+		    :exclude-arch ("arm-pc-linux-gnu"
+				   "i386-unknown-freebsd"
+				   "i686-apple-darwin9"
+				   "i686-pc-linux-gnu"
+				   "i686-pc-windows-msvc"
+				   "x86_64-apple-darwin9"
+					;"x86_64-pc-linux-gnu"
+				   "x86_64-pc-windows-msvc"
+				   "x86_64-unknown-freebsd")
+		    :exclude-sources (;"/usr/include/linux/types.h"
+				      ;"/usr/include/linux/magic.h"
+				      "/usr/include/")
+		    :include-sources ("/usr/include/asm-generic/ioctl.h"
+				      "/usr/include/linux/ioctl.h"
+				      ))
+
 
 (usbdevfs-bulktransfer)
 (autowrap:with-alloc (bla '(:struct (USBDEVFS-BULKTRANSFER)))
