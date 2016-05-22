@@ -72,7 +72,7 @@ and make the file descriptor FD available."
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (defparameter *spec-path* (merge-pathnames "stage/sb-look-ma-no-libusb/"
 					     (user-homedir-pathname))))
-
+ 
 (autowrap:c-include "/usr/include/linux/usbdevice_fs.h"
 		    :spec-path *spec-path*
 		    :exclude-arch ("arm-pc-linux-gnu"
@@ -84,7 +84,8 @@ and make the file descriptor FD available."
 					;"x86_64-pc-linux-gnu"
 				   "x86_64-pc-windows-msvc"
 				   "x86_64-unknown-freebsd")
-		    :exclude-sources ()
+		    :exclude-sources ("/usr/include/linux/types.h"
+				      "/usr/include/linux/magic.h")
 		    :include-sources ())
 
 ;; documentation of the ioctls
