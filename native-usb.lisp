@@ -94,6 +94,14 @@ and make the file descriptor FD available."
   (defparameter *bla* bla)
   (autowrap:foreign-record-bit-size bla)
   )
+(defparameter *bla* (autowrap:find-type '(:struct (USBDEVFS-BULKTRANSFER))))
+
+
+(truncate
+ (autowrap:foreign-record-bit-size
+  (autowrap:find-type '(:struct (USBDEVFS-BULKTRANSFER))))
+ 8)
+
 (autowrap:foreign-record-bit-size '(:struct USBDEVFS-BULKTRANSFER)
 			 ) 
 
