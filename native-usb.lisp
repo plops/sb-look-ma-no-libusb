@@ -86,7 +86,16 @@ and make the file descriptor FD available."
 				   "x86_64-unknown-freebsd")
 		    :exclude-sources ("/usr/include/linux/types.h"
 				      "/usr/include/linux/magic.h")
-		    :include-sources ())
+		    :include-sources ("/usr/include/linux/ioctl.h"))
+
+
+(usbdevfs-bulktransfer)
+(autowrap:with-alloc (bla '(:struct (USBDEVFS-BULKTRANSFER)))
+  (defparameter *bla* bla)
+  (autowrap:foreign-record-bit-size bla)
+  )
+(autowrap:foreign-record-bit-size '(:struct USBDEVFS-BULKTRANSFER)
+			 ) 
 
 ;; why is +USBDEVFS-BULK+ NIL?
 
