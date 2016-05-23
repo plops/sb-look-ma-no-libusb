@@ -11,7 +11,11 @@
 
 #+generate-native-usb-doc
 (mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
-  "Make sure your user has read and write permissions for the USB device, e.g.:
+  "This is an pure Common Lisp interface for Linux USB. It requires SBCL bacause I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autwrap to obtain the required IOCTL type and constant definitions.
+
+
+Make sure your user has read and write permissions for the USB device,
+e.g.:
 
 ```
 crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
