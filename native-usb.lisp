@@ -74,7 +74,8 @@ and make the file descriptor FD available."
 					     (user-homedir-pathname))))
 
 
-(autowrap::run-c2ffi "/usr/include/linux/usbdevice_fs.h" "/dev/shm/")
+(let ((autowrap::*trace-cffi* t))
+ (autowrap::run-c2ffi "/usr/include/linux/usbdevice_fs.h" "/dev/shm/"))
 
 (with-open-file (s "usb.h"
 		   :direction :output
