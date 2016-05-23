@@ -159,6 +159,30 @@ obtained from STREAM."
        (setf response-timestamp-ns (stat-mtim (namestring fn)))))
     (values buffer response-timestamp-ns)))
 
+(defun usb-bulk-transfer (stream ep buffer &key (timeout-ms 1000))
+  (declare (type (unsigned-byte 32) ep timeout-ms))
+  (let* ((fd (sb-posix:file-descriptor stream))
+	 (fn (pathname stream))
+	 (response-timestamp-ns 0)
+	 (n (length buffer)))
+    (declare (type (unsigned-byte 32) n)
+	     (type (unsigned-byte 64) response-timestamp-ns))
+    (sb-sys:with-pinned-objects (buffer)
+      (autowrap:with-alloc (b '(:struct (usbdevfs-bulktransfer)))
+       (setf (usbdevfs-bulktransfer.ep b) ep
+	     (usbdevfs-bulktransfer.len b) n
+	     (usbdevfs-bulktransfer.data b) (sb-sys:vector-sap buffer)
+	     (usbdevfs-bulktransfer.timeout b) timeout-ms)
+       (assert (<= 0 (CFFI-SYS:%FOREIGN-FUNCALL "ioctl"
+						(:INT fd
+						      :UNSIGNED-LONG +USBDEVFS-BULK+
+						      :POINTER (AUTOWRAP:PTR b)
+						      :INT)
+						:CONVENTION :CDECL)))
+       (setf response-timestamp-ns (stat-mtim (namestring fn)))))
+    (values buffer response-timestamp-ns)))
+
+
 (with-open-usb (s #x10c4 :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
     (usb-control-msg s #xc0 #x22 0 0 buf)))
