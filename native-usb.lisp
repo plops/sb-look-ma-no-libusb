@@ -22,7 +22,15 @@ crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
 ```
 
 Open the a USB stream using the macro `WITH-OPEN-USB` and send control
-or bulk messages.
+or bulk messages. Example: 
+
+```common-lisp
+(with-open-usb (s #x10c4 :product-id #x87a0)
+  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
+    (usb-control-msg s #xc0 #x22 0 0 buf)))
+```
+
+For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
 "
   ;(with-open-usb macro)		
   (usb-control-msg function)
