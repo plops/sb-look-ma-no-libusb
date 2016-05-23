@@ -22,19 +22,20 @@ device number."
 #+nil
 (get-usb-busnum-and-devnum #x10c4 #x87a0)
 
-(defmacro with-open-usb ((fd vendor-id &key (stream (gensym "USB-STREAM"))
+(defmacro with-open-usb ((fd fn vendor-id &key (stream (gensym "USB-STREAM"))
 			     (product-id 0))
 			 &body body)
   "Scan all USB devices for matching vendor-id, open the usbfs file
 and make the file descriptor FD available."
   `(multiple-value-bind (bus dev)
        (get-usb-busnum-and-devnum ,vendor-id ,product-id)
-     (with-open-file (,stream (format nil "/dev/bus/usb/~3,'0d/~3,'0d" bus dev)
-			 :direction :io
-			 :if-exists :overwrite
-			 :element-type '(unsigned-byte 8))
-       (let ((,fd (sb-posix:file-descriptor ,stream)))
-	 ,@body))))
+     (let ((,fn (format nil "/dev/bus/usb/~3,'0d/~3,'0d" bus dev)))
+      (with-open-file (,stream ,fn
+			       :direction :io
+			       :if-exists :overwrite
+			       :element-type '(unsigned-byte 8))
+	(let ((,fd (sb-posix:file-descriptor ,stream)))
+	  ,@body)))))
 
 #+nil
 (with-open-usb (fd #x10c4 :stream s :product-id #x87a0)
@@ -152,6 +153,11 @@ and make the file descriptor FD available."
     buffer))
 
 
-(with-open-usb (fd #x10c4 :stream s :product-id #x87a0)
+
+
+
+
+(with-open-usb (fd fn #x10c4 :stream s :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
-    (usb-control-msg fd #xc0 #x22 0 0 buf)))
+    (usb-control-msg fd #xc0 #x22 0 0 buf)
+    (sb-posix:stat-mtime (sb-posix:stat fn))))
