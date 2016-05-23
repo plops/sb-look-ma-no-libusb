@@ -17,8 +17,10 @@
 crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
 ```
 
+Open the a USB stream using the macro `WITH-OPEN-USB` and send control
+or bulk messages.
 "
-  (with-open-usb macro)
+  ;(with-open-usb macro)		
   (usb-control-msg function)
   (usb-bulk-transfer function))
 
