@@ -24,7 +24,21 @@ crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
 Open the a USB stream using the macro `WITH-OPEN-USB` and send control
 or bulk messages. Example: 
 
+The following commands should install this library into a local
+quicklisp installation.  Note that a few header files will be
+generated in /tmp.
+
+```
+mkdir ~/stage/
+cd ~/stage/
+git clone https://github.com/plops/sb-look-ma-no-libusb
+ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
+```
+
 ```common-lisp
+(eval-when (:load-toplevel :execute :compile-toplevel)
+  (ql:quickload :native-usb))
+(in-package :native-usb)
 (with-open-usb (s #x10c4 :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
     (usb-control-msg s #xc0 #x22 0 0 buf)))
