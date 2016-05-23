@@ -73,12 +73,6 @@ and make the file descriptor FD available."
   (defparameter *spec-path* (merge-pathnames "stage/sb-look-ma-no-libusb/"
 					     (user-homedir-pathname))))
 
-
-
-(let ((autowrap::*trace-c2ffi* t))
- (autowrap::run-c2ffi "/usr/include/linux/usbdevice_fs.h" "/dev/shm/b"))
-
-
 (progn
   (with-open-file (s "/tmp/usb0.h"
 		     :direction :output
@@ -102,15 +96,7 @@ and make the file descriptor FD available."
     (format s "#include <sys/stat.h>~%")
     (format s "#include <sys/ioctl.h>~%")
     (format s "#include \"/tmp/usb0.h\"~%")
-    (format s "#include \"/tmp/usb_macros.h\"~%"))
-
-  (autowrap::run-check autowrap::*c2ffi-program*
-		       (autowrap::list "/tmp/usb1.h"
-				       "-A" "x86_64-pc-linux-gnu"
-				       "-i" "/usr/include/"
-				       "-i" "/usr/include/linux/"
-				       "-o" "/dev/shm/usb1.spec"))
-  )
+    (format s "#include \"/tmp/usb_macros.h\"~%")))
 
 (autowrap:c-include "/tmp/usb1.h"
 		    :spec-path *spec-path*
@@ -129,59 +115,13 @@ and make the file descriptor FD available."
 		    :trace-c2ffi t)
 
 
-
-
-(autowrap:c-include "/usr/include/linux/usbdevice_fs.h"
-		    :spec-path *spec-path*
-		    :exclude-arch ("arm-pc-linux-gnu"
-				   "i386-unknown-freebsd"
-				   "i686-apple-darwin9"
-				   "i686-pc-linux-gnu"
-				   "i686-pc-windows-msvc"
-				   "x86_64-apple-darwin9"
-					;"x86_64-pc-linux-gnu"
-				   "x86_64-pc-windows-msvc"
-				   "x86_64-unknown-freebsd")
-		    :exclude-sources ("/usr/include/linux/types.h"
-				      "/usr/include/linux/magic.h")
-		    :include-sources ("/usr/include/linux/ioctl.h")
-		    :trace-c2ffi t)
-
-+USBDEVFS-BULK+
-
-(usbdevfs-bulktransfer)
-(autowrap:with-alloc (bla '(:struct (USBDEVFS-BULKTRANSFER)))
-  (defparameter *bla* bla)
-  (autowrap:foreign-record-bit-size bla)
-  )
-(defparameter *bla* (autowrap:find-type '(:struct (USBDEVFS-BULKTRANSFER))))
-
-
+#+nil
 (truncate
  (autowrap:foreign-record-bit-size
   (autowrap:find-type '(:struct (USBDEVFS-BULKTRANSFER))))
  8)
 
-(autowrap:foreign-record-bit-size '(:struct USBDEVFS-BULKTRANSFER)
-			 ) 
-
-;; why is +USBDEVFS-BULK+ NIL?
-
 ;; documentation of the ioctls
 ;; https://www.kernel.org/doc/htmldocs/usb/usbfs-ioctl.html
-(defun ioc (dir type nr size)
-  "Size is bytes"
-  (let ((nr-bits 8)
-        (type-bits 8)
-        (size-bits 14)
-        (dir-bits 2)
-        (ioc 0))
-    (declare (type (unsigned-byte 32) ioc))
-    (setf (ldb (byte nr-bits 0) ioc) nr
-          (ldb (byte type-bits (+ nr-bits)) ioc) type
-          (ldb (byte size-bits (+ nr-bits type-bits)) ioc) size
-          (ldb (byte dir-bits (+ nr-bits type-bits size-bits)) ioc) (ecase dir
-                                                                     (:none 0)
-                                                                     (:write 1)
-                                                                     (:read 2)))
-    ioc))
+
+
