@@ -88,7 +88,8 @@ and make the file descriptor FD available."
 (autowrap::run-check autowrap::*c2ffi-program*
 		     (autowrap::list "/tmp/usb1.h"
 				     "-A" "x86_64-pc-linux-gnu"
-				     "-i" "/usr/include/" ))
+				     "-i" "/usr/include/"
+				     "-i" "/usr/include/linux/"))
 
 (with-open-file (s "/tmp/usb0.h"
 		   :direction :output
@@ -101,6 +102,8 @@ and make the file descriptor FD available."
 		   :if-does-not-exist :create
 		   :if-exists :supersede)
   
+  (format s "#include <sys/types.h>~%")
+  (format s "#include <sys/stat.h>~%")
   (format s "#include <sys/ioctl.h>~%")
   (format s "#include \"/tmp/usb0.h\"~%")
   (format s "#include \"/tmp/usb_macros.h\"~%"))
