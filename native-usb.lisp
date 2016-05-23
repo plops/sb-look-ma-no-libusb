@@ -124,4 +124,36 @@ and make the file descriptor FD available."
 ;; documentation of the ioctls
 ;; https://www.kernel.org/doc/htmldocs/usb/usbfs-ioctl.html
 
+#+nil
+(sb-unix:unix-ioctl )
 
+#+nil
+(sb-posix:ioctl )
+
+(defun usb-control-msg (fd requesttype request value index buffer &key (timeout-ms 1000))
+  (declare (type (unsigned-byte 8) requesttype request)
+	   (type (unsigned-byte 16) value index)
+	   (type (unsigned-byte 32) timeout-ms))
+  (let ((n (length buffer)))
+    (declare (type (unsigned-byte 16) n))
+    (sb-sys:with-pinned-objects (buffer)
+      (autowrap:with-alloc (c '(:struct (usbdevfs-ctrltransfer)))
+       (setf (usbdevfs-ctrltransfer.b-request-type c) requesttype
+	     (usbdevfs-ctrltransfer.b-request c) request
+	     (usbdevfs-ctrltransfer.w-value c) value
+	     (usbdevfs-ctrltransfer.w-index c) index
+	     (usbdevfs-ctrltransfer.w-length c) n
+	     (usbdevfs-ctrltransfer.data c) (sb-sys:vector-sap buffer)
+	     (usbdevfs-ctrltransfer.timeout c) timeout-ms)
+       #+nil
+       (assert (= 0 (sb-unix:unix-ioctl fd +usbdevfs-control+ (autowrap:ptr c))))
+       (assert (= 0 (sb-posix:ioctl fd +usbdevfs-control+ (sb-alien:sap-alien (autowrap:ptr c) sb-alien:system-area-pointer))))
+       #+nil
+       (assert (= 0 (ioctl fd +usbdevfs-control+ (autowrap:ptr c))))
+       ))
+    buffer))
+
+
+(with-open-usb (fd #x10c4 :stream s :product-id #x87a0)
+  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
+    (usb-control-msg fd #xc0 #x22 0 0 buf)))
