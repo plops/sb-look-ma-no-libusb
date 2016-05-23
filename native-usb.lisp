@@ -145,12 +145,10 @@ and make the file descriptor FD available."
 	     (usbdevfs-ctrltransfer.w-length c) n
 	     (usbdevfs-ctrltransfer.data c) (sb-sys:vector-sap buffer)
 	     (usbdevfs-ctrltransfer.timeout c) timeout-ms)
-       #+nil
-       (assert (= 0 (sb-unix:unix-ioctl fd +usbdevfs-control+ (autowrap:ptr c))))
-       (assert (= 0 (sb-posix:ioctl fd +usbdevfs-control+ (sb-alien:sap-alien (autowrap:ptr c) sb-alien:system-area-pointer))))
-       #+nil
-       (assert (= 0 (ioctl fd +usbdevfs-control+ (autowrap:ptr c))))
-       ))
+       (assert (<= 0 (CFFI-SYS:%FOREIGN-FUNCALL "ioctl"
+						(:INT fd :UNSIGNED-LONG +USBDEVFS-CONTROL+
+						      :POINTER (AUTOWRAP:PTR C) :INT)
+						:CONVENTION :CDECL)))))
     buffer))
 
 
