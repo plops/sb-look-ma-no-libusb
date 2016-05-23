@@ -74,15 +74,16 @@ and make the file descriptor FD available."
 					     (user-homedir-pathname))))
 
 
-(let ((autowrap::*trace-cffi* t))
+
+(let ((autowrap::*trace-c2ffi* t))
  (autowrap::run-c2ffi "/usr/include/linux/usbdevice_fs.h" "/dev/shm/"))
 
 (with-open-file (s "usb.h"
 		   :direction :output
 		   :if-does-not-exist :create
 		   :if-exists :supersede)
-  (format s "#include \"/usr/include/linux/usbdevice_fs.h\"")
-  (format s "#include \"usb_macros.h\""))
+  (format s "#include \"/usr/include/linux/usbdevice_fs.h\"~%")
+  (format s "#include \"usb_macros.h\"~%"))
 
 (autowrap:c-include "/usr/include/linux/usbdevice_fs.h"
 		    :spec-path *spec-path*
