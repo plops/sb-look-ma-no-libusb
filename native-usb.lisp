@@ -72,7 +72,17 @@ and make the file descriptor FD available."
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (defparameter *spec-path* (merge-pathnames "stage/sb-look-ma-no-libusb/"
 					     (user-homedir-pathname))))
- 
+
+
+(autowrap::run-c2ffi "/usr/include/linux/usbdevice_fs.h" "/dev/shm/")
+
+(with-open-file (s "usb.h"
+		   :direction :output
+		   :if-does-not-exist :create
+		   :if-exists :supersede)
+  (format s "#include \"/usr/include/linux/usbdevice_fs.h\"")
+  (format s "#include \"usb_macros.h\""))
+
 (autowrap:c-include "/usr/include/linux/usbdevice_fs.h"
 		    :spec-path *spec-path*
 		    :exclude-arch ("arm-pc-linux-gnu"
@@ -86,26 +96,10 @@ and make the file descriptor FD available."
 				   "x86_64-unknown-freebsd")
 		    :exclude-sources ("/usr/include/linux/types.h"
 				      "/usr/include/linux/magic.h")
-		    :include-sources ("/usr/include/linux/ioctl.h"))
+		    :include-sources ("/usr/include/linux/ioctl.h")
+		    :trace-c2ffi t)
 
-(autowrap:c-include "usb.h"
-		    :spec-path *spec-path*
-		    :exclude-arch ("arm-pc-linux-gnu"
-				   "i386-unknown-freebsd"
-				   "i686-apple-darwin9"
-				   "i686-pc-linux-gnu"
-				   "i686-pc-windows-msvc"
-				   "x86_64-apple-darwin9"
-					;"x86_64-pc-linux-gnu"
-				   "x86_64-pc-windows-msvc"
-				   "x86_64-unknown-freebsd")
-		    :exclude-sources (;"/usr/include/linux/types.h"
-				      ;"/usr/include/linux/magic.h"
-				      "/usr/include/")
-		    :include-sources ("/usr/include/asm-generic/ioctl.h"
-				      "/usr/include/linux/ioctl.h"
-				      ))
-
++USBDEVFS-BULK+
 
 (usbdevfs-bulktransfer)
 (autowrap:with-alloc (bla '(:struct (USBDEVFS-BULKTRANSFER)))
