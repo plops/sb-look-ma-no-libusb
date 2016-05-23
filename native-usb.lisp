@@ -38,8 +38,14 @@ For debugging and functional verification I use `sudo modprobe usbmon` and `wire
 
 (in-package :native-usb)
 
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (ql:quickload :cl-autowrap)
+  (defparameter *spec-path* (merge-pathnames "stage/sb-look-ma-no-libusb/"
+					     (user-homedir-pathname))))
+
 (defun get-usb-busnum-and-devnum (vendor-id &optional (product-id 0))
-  (declare (type (unsigned-byte 16) vendor-id product-id))
+  (declare (type (unsigned-byte 16) vendor-id product-id)
+	   (ignorable product-id))
   "Scan all USB devices for matching vendor-id and return its bus and
 device number. 
 
@@ -89,10 +95,8 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 
 ;; https://github.com/scanlime/ram-tracer/blob/a8f935ca9d275c970a89fca1fed9585f51224edb/host/fastftdi.c
 
-(ql:quickload :cl-autowrap)
-(eval-when (:compile-toplevel :execute :load-toplevel)
-  (defparameter *spec-path* (merge-pathnames "stage/sb-look-ma-no-libusb/"
-					     (user-homedir-pathname))))
+
+
 
 (progn
   (with-open-file (s "/tmp/usb0.h"
