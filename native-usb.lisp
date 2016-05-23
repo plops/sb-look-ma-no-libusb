@@ -9,6 +9,9 @@
 	   #:usb-control-msg
 	   #:usb-bulk-transfer))
 
+
+(in-package :native-usb)
+
 #+generate-native-usb-doc
 (mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
   "This is an pure Common Lisp interface for Linux USB. It requires SBCL bacause I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autwrap to obtain the required IOCTL type and constant definitions.
@@ -50,7 +53,6 @@ For debugging and functional verification I use `sudo modprobe usbmon` and `wire
   (usb-control-msg function)
   (usb-bulk-transfer function))
 
-(in-package :native-usb)
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (ql:quickload :cl-autowrap)
