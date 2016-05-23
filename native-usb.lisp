@@ -22,20 +22,18 @@ device number."
 #+nil
 (get-usb-busnum-and-devnum #x10c4 #x87a0)
 
-(defmacro with-open-usb ((fd fn vendor-id &key (stream (gensym "USB-STREAM"))
-			     (product-id 0))
+(defmacro with-open-usb ((stream vendor-id &key (product-id 0))
 			 &body body)
   "Scan all USB devices for matching vendor-id, open the usbfs file
-and make the file descriptor FD available."
+and make STREAM available. The filedescriptor and pathname can be
+obtained from STREAM."
   `(multiple-value-bind (bus dev)
        (get-usb-busnum-and-devnum ,vendor-id ,product-id)
-     (let ((,fn (format nil "/dev/bus/usb/~3,'0d/~3,'0d" bus dev)))
-      (with-open-file (,stream ,fn
-			       :direction :io
-			       :if-exists :overwrite
-			       :element-type '(unsigned-byte 8))
-	(let ((,fd (sb-posix:file-descriptor ,stream)))
-	  ,@body)))))
+     (with-open-file (,stream (format nil "/dev/bus/usb/~3,'0d/~3,'0d" bus dev)
+			      :direction :io
+			      :if-exists :overwrite
+			      :element-type '(unsigned-byte 8))
+       ,@body)))
 
 #+nil
 (with-open-usb (fd #x10c4 :stream s :product-id #x87a0)
@@ -125,18 +123,24 @@ and make the file descriptor FD available."
 ;; documentation of the ioctls
 ;; https://www.kernel.org/doc/htmldocs/usb/usbfs-ioctl.html
 
-#+nil
-(sb-unix:unix-ioctl )
+(defun stat-mtim (fn)
+  (declare (values (unsigned-byte 64) &optional))
+  "Return the 64bit mtime (in ns) for the file FN."
+  (autowrap:with-alloc (stat '(:struct (stat)))
+    (assert (= 0 (stat fn (autowrap:ptr stat))))
+    (+ (* 1000000000 (stat.st-mtim.tv-sec stat))
+       (stat.st-mtim.tv-nsec stat))))
 
-#+nil
-(sb-posix:ioctl )
-
-(defun usb-control-msg (fd requesttype request value index buffer &key (timeout-ms 1000))
+(defun usb-control-msg (stream requesttype request value index buffer &key (timeout-ms 1000))
   (declare (type (unsigned-byte 8) requesttype request)
 	   (type (unsigned-byte 16) value index)
 	   (type (unsigned-byte 32) timeout-ms))
-  (let ((n (length buffer)))
-    (declare (type (unsigned-byte 16) n))
+  (let* ((fd (sb-posix:file-descriptor stream))
+	 (fn (pathname stream))
+	 (finished 0)
+	 (n (length buffer)))
+    (declare (type (unsigned-byte 16) n)
+	     (type (unsigned-byte 64) finished))
     (sb-sys:with-pinned-objects (buffer)
       (autowrap:with-alloc (c '(:struct (usbdevfs-ctrltransfer)))
        (setf (usbdevfs-ctrltransfer.b-request-type c) requesttype
@@ -147,24 +151,16 @@ and make the file descriptor FD available."
 	     (usbdevfs-ctrltransfer.data c) (sb-sys:vector-sap buffer)
 	     (usbdevfs-ctrltransfer.timeout c) timeout-ms)
        (assert (<= 0 (CFFI-SYS:%FOREIGN-FUNCALL "ioctl"
-						(:INT fd :UNSIGNED-LONG +USBDEVFS-CONTROL+
-						      :POINTER (AUTOWRAP:PTR C) :INT)
-						:CONVENTION :CDECL)))))
-    buffer))
+						(:INT fd
+						      :UNSIGNED-LONG +USBDEVFS-CONTROL+
+						      :POINTER (AUTOWRAP:PTR C)
+						      :INT)
+						:CONVENTION :CDECL)))
+       (setf finished (stat-mtim (namestring fn)))))
+    (values buffer finished)))
 
-
-
-
-(defun stat-mtim (fn)
-  (declare (values (unsigned-byte 64) &optional))
-  "Return the 64bit mtime (in ns) for the file FN."
-  (autowrap:with-alloc (stat '(:struct (stat)))
-    (assert (= 0 (stat fn (autowrap:ptr stat))))
-    (+ (* 1000000000 (stat.st-mtim.tv-sec stat))
-       (stat.st-mtim.tv-nsec stat))))
-
-
-(with-open-usb (fd fn #x10c4 :stream s :product-id #x87a0)
+(with-open-usb (s #x10c4 :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
-    (usb-control-msg fd #xc0 #x22 0 0 buf)
-    (stat-mtim fn)))
+    (usb-control-msg s #xc0 #x22 0 0 buf)))
+
+
