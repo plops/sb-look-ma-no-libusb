@@ -1,3 +1,7 @@
+;; this file is only required to regenerate the README.md. Load this
+;; after native-usb.lisp and call update-markdown-readme whenever new
+;; functions were added or documentation was changed.
+
 (eval-when (:execute :load-toplevel :compile-toplevel)
   (ql:quickload :mgl-pax)
   (push :generate-native-usb-doc cl:*features*))
