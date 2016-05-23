@@ -137,10 +137,10 @@ obtained from STREAM."
 	   (type (unsigned-byte 32) timeout-ms))
   (let* ((fd (sb-posix:file-descriptor stream))
 	 (fn (pathname stream))
-	 (finished 0)
+	 (response-timestamp-ns 0)
 	 (n (length buffer)))
     (declare (type (unsigned-byte 16) n)
-	     (type (unsigned-byte 64) finished))
+	     (type (unsigned-byte 64) response-timestamp-ns))
     (sb-sys:with-pinned-objects (buffer)
       (autowrap:with-alloc (c '(:struct (usbdevfs-ctrltransfer)))
        (setf (usbdevfs-ctrltransfer.b-request-type c) requesttype
@@ -156,8 +156,8 @@ obtained from STREAM."
 						      :POINTER (AUTOWRAP:PTR C)
 						      :INT)
 						:CONVENTION :CDECL)))
-       (setf finished (stat-mtim (namestring fn)))))
-    (values buffer finished)))
+       (setf response-timestamp-ns (stat-mtim (namestring fn)))))
+    (values buffer response-timestamp-ns)))
 
 (with-open-usb (s #x10c4 :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
