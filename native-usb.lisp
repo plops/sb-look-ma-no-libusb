@@ -1,7 +1,39 @@
+#+generate-native-usb-doc
+(mgl-pax:define-package :native-usb
+    (:documentation "Pure Common Lisp based USB interface. Requires SBCL and Linux.")
+  (:use #:cl))
+#-generate-native-usb-doc
+(defpackage :native-usb
+  (:use #:cl)
+  (:export #:with-open-usb
+	   #:usb-control-msg
+	   #:usb-bulk-transfer))
+
+#+generate-native-usb-doc
+(mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
+  "Make sure your user has read and write permissions for the USB device, e.g.:
+
+```
+crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
+```
+
+"
+  (with-open-usb macro)
+  (usb-control-msg function)
+  (usb-bulk-transfer function))
+
+(in-package :native-usb)
+
 (defun get-usb-busnum-and-devnum (vendor-id &optional (product-id 0))
   (declare (type (unsigned-byte 16) vendor-id product-id))
   "Scan all USB devices for matching vendor-id and return its bus and
-device number."
+device number. 
+
+Example usage:
+```
+(get-usb-busnum-and-devnum #x10c4 #x87a0) => 1,2
+```
+"
   (let* ((vendor-files (directory "/sys/bus/usb/devices/usb*/*/idVendor"))
 	 (vendors (mapcar #'(lambda (fn)
 			      (with-open-file (s fn)
@@ -15,10 +47,6 @@ device number."
 	 (read s))
        (with-open-file (s (merge-pathnames dir "/devnum"))
 	 (read s))))))
-
-
-#+nil
-(get-usb-busnum-and-devnum #x10c4 #x87a0)
 
 (defmacro with-open-usb ((stream vendor-id &key (product-id 0))
 			 &body body)
