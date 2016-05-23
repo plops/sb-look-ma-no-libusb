@@ -76,14 +76,34 @@ and make the file descriptor FD available."
 
 
 (let ((autowrap::*trace-c2ffi* t))
- (autowrap::run-c2ffi "/usr/include/linux/usbdevice_fs.h" "/dev/shm/"))
+ (autowrap::run-c2ffi "/usr/include/linux/usbdevice_fs.h" "/dev/shm/b"))
 
-(with-open-file (s "usb.h"
+(autowrap::run-check autowrap::*c2ffi-program*
+		     (autowrap::list "/tmp/usb0.h"
+				      "-D" "null"
+				      "-M" "/tmp/usb_macros.h"
+				      "-A" "x86_64-pc-linux-gnu"
+				      ))
+
+(autowrap::run-check autowrap::*c2ffi-program*
+		     (autowrap::list "/tmp/usb1.h"
+				     "-A" "x86_64-pc-linux-gnu"
+				     "-i" "/usr/include/" ))
+
+(with-open-file (s "/tmp/usb0.h"
 		   :direction :output
 		   :if-does-not-exist :create
 		   :if-exists :supersede)
-  (format s "#include \"/usr/include/linux/usbdevice_fs.h\"~%")
-  (format s "#include \"usb_macros.h\"~%"))
+  (format s "#include \"/usr/include/linux/usbdevice_fs.h\"~%"))
+
+(with-open-file (s "/tmp/usb1.h"
+		   :direction :output
+		   :if-does-not-exist :create
+		   :if-exists :supersede)
+  
+  (format s "#include <sys/ioctl.h>~%")
+  (format s "#include \"/tmp/usb0.h\"~%")
+  (format s "#include \"/tmp/usb_macros.h\"~%"))
 
 (autowrap:c-include "/usr/include/linux/usbdevice_fs.h"
 		    :spec-path *spec-path*
