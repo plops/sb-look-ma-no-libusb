@@ -1,5 +1,3 @@
-;; strace -f -e open sbcl --noinform --noprint --disable-ldb --no-sysinit --no-userinit --script native-usb.lisp
-
 (defun get-usb-busnum-and-devnum (vendor-id &optional (product-id 0))
   (declare (type (unsigned-byte 16) vendor-id product-id))
   "Scan all USB devices for matching vendor-id and return its bus and
@@ -26,7 +24,7 @@ device number."
 			 &body body)
   "Scan all USB devices for matching vendor-id, open the usbfs file
 and make STREAM available. The filedescriptor and pathname can be
-obtained from STREAM."
+obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
   `(multiple-value-bind (bus dev)
        (get-usb-busnum-and-devnum ,vendor-id ,product-id)
      (with-open-file (,stream (format nil "/dev/bus/usb/~3,'0d/~3,'0d" bus dev)
@@ -35,37 +33,19 @@ obtained from STREAM."
 			      :element-type '(unsigned-byte 8))
        ,@body)))
 
-#+nil
-(with-open-usb (fd #x10c4 :stream s :product-id #x87a0)
-   (read-byte s))
-
-
-
 ;; https://www.linuxjournal.com/article/7466
-
-;; sudo cat /sys/kernel/debug/usb/devices
-
-;; T:  Bus=02 Lev=01 Prnt=01 Port=01 Cnt=01 Dev#=  8 Spd=12   MxCh= 0
-;; D:  Ver= 2.00 Cls=00(>ifc ) Sub=00 Prot=00 MxPS=64 #Cfgs=  1
-;; P:  Vendor=10c4 ProdID=87a0 Rev= 1.00
-;; S:  Manufacturer=Silicon Laboratories
-;; S:  Product=CP2130 USB-to-SPI Bridge
-;; S:  SerialNumber=000029BE
-;; C:* #Ifs= 1 Cfg#= 1 Atr=a0 MxPwr=100mA
-;; I:* If#= 0 Alt= 0 #EPs= 2 Cls=ff(vend.) Sub=ff Prot=ff Driver=(none)
-;; E:  Ad=01(O) Atr=02(Bulk) MxPS=  64 Ivl=0ms
-;; E:  Ad=82(I) Atr=02(Bulk) MxPS=  64 Ivl=0ms
-
 ;; https://www.kernel.org/doc/Documentation/usb/proc_usb_info.txt
-
-
-;; https://github.com/scanlime/ram-tracer/blob/a8f935ca9d275c970a89fca1fed9585f51224edb/host/fastftdi.c
 
 ;; definition of ioctls in the kernel
 ;; drivers/usb/core/devio.c
 
 ;; kernel interface for user level
 ;; usbdevice_fs.h
+
+;; documentation of the ioctls
+;; https://www.kernel.org/doc/htmldocs/usb/usbfs-ioctl.html
+
+;; https://github.com/scanlime/ram-tracer/blob/a8f935ca9d275c970a89fca1fed9585f51224edb/host/fastftdi.c
 
 (ql:quickload :cl-autowrap)
 (eval-when (:compile-toplevel :execute :load-toplevel)
@@ -120,12 +100,9 @@ obtained from STREAM."
   (autowrap:find-type '(:struct (USBDEVFS-BULKTRANSFER))))
  8)
 
-;; documentation of the ioctls
-;; https://www.kernel.org/doc/htmldocs/usb/usbfs-ioctl.html
-
 (defun stat-mtim (fn)
   (declare (values (unsigned-byte 64) &optional))
-  "Return the 64bit mtime (in ns) for the file FN."
+  "Return the 64bit mtime (in ns) for the file with name FN."
   (autowrap:with-alloc (stat '(:struct (stat)))
     (assert (= 0 (stat fn (autowrap:ptr stat))))
     (+ (* 1000000000 (stat.st-mtim.tv-sec stat))
@@ -135,6 +112,7 @@ obtained from STREAM."
   (declare (type (unsigned-byte 8) requesttype request)
 	   (type (unsigned-byte 16) value index)
 	   (type (unsigned-byte 32) timeout-ms))
+  "Send a synchronous control message."
   (let* ((fd (sb-posix:file-descriptor stream))
 	 (fn (pathname stream))
 	 (response-timestamp-ns 0)
@@ -161,6 +139,7 @@ obtained from STREAM."
 
 (defun usb-bulk-transfer (stream ep buffer &key (timeout-ms 1000))
   (declare (type (unsigned-byte 32) ep timeout-ms))
+  "Initiate a synchronous USB bulk transfer (read or write, depending on EP)."
   (let* ((fd (sb-posix:file-descriptor stream))
 	 (fn (pathname stream))
 	 (response-timestamp-ns 0)
@@ -182,7 +161,7 @@ obtained from STREAM."
        (setf response-timestamp-ns (stat-mtim (namestring fn)))))
     (values buffer response-timestamp-ns)))
 
-
+#+nil
 (with-open-usb (s #x10c4 :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
     (usb-control-msg s #xc0 #x22 0 0 buf)))
