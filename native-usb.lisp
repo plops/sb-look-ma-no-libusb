@@ -155,9 +155,16 @@ and make the file descriptor FD available."
 
 
 
+(defun stat-mtim (fn)
+  (declare (values (unsigned-byte 64) &optional))
+  "Return the 64bit mtime (in ns) for the file FN."
+  (autowrap:with-alloc (stat '(:struct (stat)))
+    (assert (= 0 (stat fn (autowrap:ptr stat))))
+    (+ (* 1000000000 (stat.st-mtim.tv-sec stat))
+       (stat.st-mtim.tv-nsec stat))))
 
 
 (with-open-usb (fd fn #x10c4 :stream s :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
     (usb-control-msg fd #xc0 #x22 0 0 buf)
-    (sb-posix:stat-mtime (sb-posix:stat fn))))
+    (stat-mtim fn)))
