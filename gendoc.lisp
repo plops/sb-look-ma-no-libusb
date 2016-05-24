@@ -6,6 +6,9 @@
 ;; quicklisp/local-projects, this file should load in slime with C-c
 ;; C-k
 
+
+
+
 (eval-when (:execute :load-toplevel :compile-toplevel)
   (ql:quickload :mgl-pax)
   (push :generate-native-usb-doc cl:*features*)
