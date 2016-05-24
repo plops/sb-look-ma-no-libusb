@@ -187,8 +187,10 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 	     (usbdevfs-ctrltransfer.b-request c) request
 	     (usbdevfs-ctrltransfer.w-value c) value
 	     (usbdevfs-ctrltransfer.w-index c) index
-	     (usbdevfs-ctrltransfer.w-length c) n
-	     (usbdevfs-ctrltransfer.data c) (sb-sys:vector-sap buffer)
+	     (usbdevfs-ctrltransfer.w-length c) n ;; must be <= PAGE_SIZE
+	     (usbdevfs-ctrltransfer.data c) (if (= n 0) ;; i think it is valid to read 0 bytes
+						(cffi:null-pointer) 
+						(sb-sys:vector-sap buffer))
 	     (usbdevfs-ctrltransfer.timeout c) timeout-ms)
        (assert (<= 0 (ioctl fd +USBDEVFS-CONTROL+ :pointer (AUTOWRAP:PTR c))))
        (setf response-timestamp-ns (stat-mtim (namestring fn)))))
