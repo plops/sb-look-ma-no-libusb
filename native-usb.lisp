@@ -190,12 +190,7 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 	     (usbdevfs-ctrltransfer.w-length c) n
 	     (usbdevfs-ctrltransfer.data c) (sb-sys:vector-sap buffer)
 	     (usbdevfs-ctrltransfer.timeout c) timeout-ms)
-       (assert (<= 0 (CFFI-SYS:%FOREIGN-FUNCALL "ioctl"
-						(:INT fd
-						      :UNSIGNED-LONG +USBDEVFS-CONTROL+
-						      :POINTER (AUTOWRAP:PTR C)
-						      :INT)
-						:CONVENTION :CDECL)))
+       (assert (<= 0 (ioctl fd +USBDEVFS-CONTROL+ :pointer (AUTOWRAP:PTR c))))
        (setf response-timestamp-ns (stat-mtim (namestring fn)))))
     (values buffer response-timestamp-ns)))
 
@@ -214,12 +209,7 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 	     (usbdevfs-bulktransfer.len b) n
 	     (usbdevfs-bulktransfer.data b) (sb-sys:vector-sap buffer)
 	     (usbdevfs-bulktransfer.timeout b) timeout-ms)
-       (assert (<= 0 (CFFI-SYS:%FOREIGN-FUNCALL "ioctl"
-						(:INT fd
-						      :UNSIGNED-LONG +USBDEVFS-BULK+
-						      :POINTER (AUTOWRAP:PTR b)
-						      :INT)
-						:CONVENTION :CDECL)))
+       (assert (<= 0 (ioctl fd +USBDEVFS-BULK+ :pointer (AUTOWRAP:PTR b))))
        (setf response-timestamp-ns (stat-mtim (namestring fn)))))
     (values buffer response-timestamp-ns)))
 
