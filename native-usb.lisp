@@ -176,7 +176,7 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 	   (type (unsigned-byte 32) timeout-ms))
   "Send a synchronous control message."
   (let* ((fd (sb-posix:file-descriptor stream))
-	 (fn (pathname stream))
+	 (fn (namestring (pathname stream)))
 	 (response-timestamp-ns 0)
 	 (n (length buffer)))
     (declare (type (unsigned-byte 16) n)
@@ -193,14 +193,14 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 						(sb-sys:vector-sap buffer))
 	     (usbdevfs-ctrltransfer.timeout c) timeout-ms)
        (assert (<= 0 (ioctl fd +USBDEVFS-CONTROL+ :pointer (AUTOWRAP:PTR c))))
-       (setf response-timestamp-ns (stat-mtim (namestring fn)))))
+       (setf response-timestamp-ns (stat-mtim fn))))
     (values buffer response-timestamp-ns)))
 
 (defun usb-bulk-transfer (stream ep buffer &key (timeout-ms 1000))
   (declare (type (unsigned-byte 32) ep timeout-ms))
   "Initiate a synchronous USB bulk transfer (read or write, depending on EP)."
   (let* ((fd (sb-posix:file-descriptor stream))
-	 (fn (pathname stream))
+	 (fn (namestring (pathname stream)))
 	 (response-timestamp-ns 0)
 	 (n (length buffer)))
     (declare (type (unsigned-byte 32) n)
@@ -212,7 +212,7 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 	     (usbdevfs-bulktransfer.data b) (sb-sys:vector-sap buffer)
 	     (usbdevfs-bulktransfer.timeout b) timeout-ms)
        (assert (<= 0 (ioctl fd +USBDEVFS-BULK+ :pointer (AUTOWRAP:PTR b))))
-       (setf response-timestamp-ns (stat-mtim (namestring fn)))))
+       (setf response-timestamp-ns (stat-mtim fn))))
     (values buffer response-timestamp-ns)))
 
 #+nil
@@ -220,4 +220,115 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
     (usb-control-msg s #xc0 #x22 0 0 buf)))
 
+;; http://www.oreilly.com/openbook/linuxdrive3/book/ch13.pdf
 
+
+(defun usb-urb-bulk-async (stream ep buffer &key (context) (stream-id 0))
+  (declare (type (unsigned-byte 8) ep))
+  (let* ((fd (sb-posix:file-descriptor stream))
+	 (fn (namestring (pathname stream)))
+	 (response-timestamp-ns 0)
+	 (n (length buffer)))
+    (declare (type (unsigned-byte 32) n)
+	     (type (unsigned-byte 64) response-timestamp-ns))
+    (sb-sys:with-pinned-objects (buffer)
+      (autowrap:with-alloc (u '(:struct (usbdevfs-urb)))
+	(setf (usbdevfs-urb.type u) +USBDEVFS-URB-TYPE-BULK+
+	      (usbdevfs-urb.endpoint u) ep
+	      (usbdevfs-urb.status u) 0
+	      (usbdevfs-urb.flags u) 0
+ 	      ;; +USBDEVFS-URB-SHORT-NOT-OK+
+	      ;; +USBDEVFS-URB-BULK-CONTINUATION+
+	      (usbdevfs-urb.buffer u) (sb-sys:vector-sap buffer)
+	      (usbdevfs-urb.buffer-length u) n
+	      (usbdevfs-urb.actual-length u) n
+	      (usbdevfs-urb.start-frame u) 0
+	      ;; stream-id is only used for bulk streams
+	      (usbdevfs-urb.field-343.stream-id u) stream-id
+	      (usbdevfs-urb.error-count u) 0
+	      (usbdevfs-urb.signr u) 0
+	      (usbdevfs-urb.usercontext u) (sb-sys:int-sap #xdeadbeef)
+	      ;(usbdevfs-urb.iso-frame-desc u) (cffi:null-pointer)
+	      )
+	(assert (<= 0 (ioctl fd +USBDEVFS-SUBMITURB+ :pointer (AUTOWRAP:PTR u))))
+	(setf response-timestamp-ns (stat-mtim fn))))
+    response-timestamp-ns))
+
+#+nil
+(let* ((data '(3 #x26 0 0 0 0))
+       (n (length data)))
+ (with-open-usb (s #x10c4)
+   (usb-urb-bulk-async
+    s #x82
+    (make-array n :element-type '(unsigned-byte 8)))))
+#+nil
+(let* ((n (length data))
+	 (header `(0 0	  ;; reserved
+		     2	  ;; cmd id ;; simultaneous write/read
+		     #x80 ;; reserved
+		     ;; number of bytes to read (little endian, 6 0 0 0 would be 6 bytes)
+		     ,(ldb (byte 8 0) n)
+		     ,(ldb (byte 8 (* 1 8)) n)
+		     ,(ldb (byte 8 (* 2 8)) n)
+		     ,(ldb (byte 8 (* 3 8)) n)))
+	 ;; combine header and data (data must have length n)
+	 (buf (map-into (make-array (+ n 8)
+				    :element-type '(unsigned-byte 8))
+			#'identity
+			(concatenate 'vector header data))))
+    (declare (type (unsigned-byte 32) n))
+    ;; in mode high-priority write (which is the default) ep 2 is bulk in
+    (let ((ret nil)
+	  (ret2 nil))
+      (with-condition-variables (read1 read1f read2 read2f write1)
+	(sb-thread:make-thread #'(lambda ()
+				   (wait read1)
+				   ;; write usb cp2130 header and a maximum of 56 bytes of payload
+				   ;; for read calls first-packet-len is 2 and the first payload 2 bytes
+				   (usb-bulk-transfer s #x01
+						      (subseq buf 0
+							      (+ 8 first-packet-len)))
+				   (notify write1))
+			       :name "write1")
+	(when (< first-packet-len n)
+	  ;; write the residual payload. the usb bus will
+	  ;; transparently split this into 64byte packets and we will
+	  ;; have to hope the the os doesn't wait too much between
+	  ;; those packets. the payload can even be 768 bytes
+
+	  (sb-thread:make-thread #'(lambda ()
+				     (wait read2)
+				     (let* ((len1 (+ 8 first-packet-len))
+					    (len2 (- n first-packet-len))
+					    (payload2 (subseq buf len1 (+ len1 len2))))
+				       (usb-bulk-transfer s #x01 payload2)))
+				 :name "write2")
+	  (sb-thread:make-thread #'(lambda ()
+				     (wait write1)
+				     (wait read1f)
+				     (notify read2)
+				     (setf ret2 (usb-bulk-transfer
+						 s #x82
+						 (make-array (- n first-packet-len)
+							     :element-type '(unsigned-byte 8))))
+				     (notify read2f))
+				 :name "read2"))
+	(sb-thread:make-thread #'(lambda ()
+				   (notify read1)
+				   (setf ret (usb-bulk-transfer
+					      s #x82
+					      (make-array n :element-type '(unsigned-byte 8))))
+				   (sleep .001)
+				   (notify read1f))
+			       :name "read1")
+	(if (= first-packet-len n)
+	    (progn ;; special case if data is small, and no timing
+		   ;; requirements, only one usb bulk write is sent
+	      (wait read1f)
+	      ret)
+	    (progn
+	      (wait read2f)
+	      (map-into (make-array (+ (length ret) (length ret2))
+				    :element-type '(unsigned-byte 8))
+			#'identity
+			(concatenate 'vector ret ret2)))))))
