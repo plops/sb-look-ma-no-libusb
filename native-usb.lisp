@@ -233,52 +233,67 @@ response is received"
 	 (n (length buffer)))
     (declare (type (unsigned-byte 32) n)
 	     (type (unsigned-byte 64) response-timestamp-ns))
-    (sb-sys:with-pinned-objects (buffer)
-      (autowrap:with-alloc (u '(:struct (usbdevfs-urb)))
-	(setf (usbdevfs-urb.type u) +USBDEVFS-URB-TYPE-BULK+
-	      (usbdevfs-urb.endpoint u) ep
-	      (usbdevfs-urb.status u) 0
-	      (usbdevfs-urb.flags u) 0
- 	      ;; +USBDEVFS-URB-SHORT-NOT-OK+
-	      ;; +USBDEVFS-URB-BULK-CONTINUATION+
-	      (usbdevfs-urb.buffer u) (sb-sys:vector-sap buffer)
-	      (usbdevfs-urb.buffer-length u) n
-	      (usbdevfs-urb.actual-length u) n
-	      (usbdevfs-urb.start-frame u) 0
-	      ;; stream-id is only used for bulk streams
-	      (usbdevfs-urb.field-343.stream-id u) stream-id
-	      (usbdevfs-urb.error-count u) 0
-	      (usbdevfs-urb.signr u) 0
-	      (usbdevfs-urb.usercontext u) (sb-sys:int-sap #xdeadbeef)
-	      ;(usbdevfs-urb.iso-frame-desc u) (cffi:null-pointer)
-	      )
-	(assert (<= 0 (ioctl fd +USBDEVFS-SUBMITURB+ :pointer (AUTOWRAP:PTR u))))
-	(setf response-timestamp-ns (stat-mtim fn))))
+    (autowrap:with-alloc (u '(:struct (usbdevfs-urb)))
+      (setf (usbdevfs-urb.type u) +USBDEVFS-URB-TYPE-BULK+
+	    (usbdevfs-urb.endpoint u) ep
+	    (usbdevfs-urb.status u) 0
+	    (usbdevfs-urb.flags u) 0
+	    ;; +USBDEVFS-URB-SHORT-NOT-OK+
+	    ;; +USBDEVFS-URB-BULK-CONTINUATION+
+	    (usbdevfs-urb.buffer u) (sb-sys:vector-sap buffer)
+	    (usbdevfs-urb.buffer-length u) n
+	    (usbdevfs-urb.actual-length u) n
+	    (usbdevfs-urb.start-frame u) 0
+	    ;; stream-id is only used for bulk streams
+	    (usbdevfs-urb.field-343.stream-id u) stream-id
+	    (usbdevfs-urb.error-count u) 0
+	    (usbdevfs-urb.signr u) 0
+	    (usbdevfs-urb.usercontext u) (sb-sys:int-sap context))
+      (assert (<= 0 (ioctl fd +USBDEVFS-SUBMITURB+ :pointer (AUTOWRAP:PTR u))))
+      (setf response-timestamp-ns (stat-mtim fn)))
     response-timestamp-ns))
 
+(defun usb-urb-reap-ndelay (stream)
+  (let* ((fd (sb-posix:file-descriptor stream)))
+    (autowrap:with-alloc (u '(:struct (usbdevfs-urb)))
+      (assert (<= 0 (ioctl fd +USBDEVFS-REAPURBNDELAY+ :pointer (AUTOWRAP:PTR u))))
+      (sb-sys:sap-int (usbdevfs-urb.usercontext u)))))
 
+(defun reset (s)
+  (usb-control-msg s
+		   #x40 #x10
+		   0 0
+		   (make-array 0 :element-type '(unsigned-byte))))
 
-(let* ((spi-data '(3 #x26 0 0 0 0))
-       (n (length spi-data))
-       (header `(0 0	  ;; reserved
-		   2	  ;; cmd id ;; simultaneous write/read
-		   #x80 ;; reserved
-		   ;; number of bytes to read (little endian, 6 0 0 0 would be 6 bytes)
-		   ,(ldb (byte 8 0) n)
-		   ,(ldb (byte 8 (* 1 8)) n)
-		   ,(ldb (byte 8 (* 2 8)) n)
-		   ,(ldb (byte 8 (* 3 8)) n)))
-       (read1 (make-array (+ n 8)
-			  :element-type '(unsigned-byte 8)))
-       (write1 (map-into (make-array (+ n 8)
-				    :element-type '(unsigned-byte 8))
-			#'identity
-			(concatenate 'vector header (subseq spi-data 0 2)))))
-  (with-open-usb (s #x10c4)
-    (usb-urb-bulk-async s #x82 read1)
-    (usb-urb-bulk-async s #x01 write1)
-    (sb-unix:unix-simple-poll (sb-posix:file-descriptor stream) :output 100)
-    ))
+(progn
+  (with-open-usb (s #x10c4 )
+    (reset s))
+  (sleep 1)
+ (let* ((spi-data '(3 #x26 0 0 0 0))
+	(n (length spi-data))
+	(header `(0 0	;; reserved
+		    2	;; cmd id ;; simultaneous write/read
+		    #x80 ;; reserved
+		    ;; number of bytes to read (little endian, 6 0 0 0 would be 6 bytes)
+		    ,(ldb (byte 8 0) n)
+		    ,(ldb (byte 8 (* 1 8)) n)
+		    ,(ldb (byte 8 (* 2 8)) n)
+		    ,(ldb (byte 8 (* 3 8)) n)))
+	(read1 (make-array (+ n 8)
+			   :element-type '(unsigned-byte 8)))
+	(write1 (map-into (make-array (+ n 8)
+				      :element-type '(unsigned-byte 8))
+			  #'identity
+			  (concatenate 'vector header (subseq spi-data 0 2)))))
+   (sb-sys:with-pinned-objects (read1 write1)
+     (with-open-usb (s #x10c4)
+       (usb-urb-bulk-async s #x82 read1 :context 123)
+       (usb-urb-bulk-async s #x01 write1 :context 456)
+       (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
+       (list (usb-urb-reap-ndelay s)
+	     (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
+	     (usb-urb-reap-ndelay s))
+       ))))
 
 
 #+nil
