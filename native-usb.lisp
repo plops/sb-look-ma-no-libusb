@@ -224,6 +224,8 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 
 
 (defun usb-urb-bulk-async (stream ep buffer &key (context) (stream-id 0))
+  "buffer must not be stack memory and should stay pinned until
+response is received"
   (declare (type (unsigned-byte 8) ep))
   (let* ((fd (sb-posix:file-descriptor stream))
 	 (fn (namestring (pathname stream)))
