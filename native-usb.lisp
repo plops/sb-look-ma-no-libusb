@@ -256,13 +256,31 @@ response is received"
 	(setf response-timestamp-ns (stat-mtim fn))))
     response-timestamp-ns))
 
-#+nil
-(let* ((data '(3 #x26 0 0 0 0))
-       (n (length data)))
- (with-open-usb (s #x10c4)
-   (usb-urb-bulk-async
-    s #x82
-    (make-array n :element-type '(unsigned-byte 8)))))
+
+
+(let* ((spi-data '(3 #x26 0 0 0 0))
+       (n (length spi-data))
+       (header `(0 0	  ;; reserved
+		   2	  ;; cmd id ;; simultaneous write/read
+		   #x80 ;; reserved
+		   ;; number of bytes to read (little endian, 6 0 0 0 would be 6 bytes)
+		   ,(ldb (byte 8 0) n)
+		   ,(ldb (byte 8 (* 1 8)) n)
+		   ,(ldb (byte 8 (* 2 8)) n)
+		   ,(ldb (byte 8 (* 3 8)) n)))
+       (read1 (make-array (+ n 8)
+			  :element-type '(unsigned-byte 8)))
+       (write1 (map-into (make-array (+ n 8)
+				    :element-type '(unsigned-byte 8))
+			#'identity
+			(concatenate 'vector header (subseq spi-data 0 2)))))
+  (with-open-usb (s #x10c4)
+    (usb-urb-bulk-async s #x82 read1)
+    (usb-urb-bulk-async s #x01 write1)
+    (sb-unix:unix-simple-poll (sb-posix:file-descriptor stream) :output 100)
+    ))
+
+
 #+nil
 (let* ((n (length data))
 	 (header `(0 0	  ;; reserved
