@@ -262,20 +262,11 @@ response is received"
        (sb-sys:sap-int (usbdevfs-urb.usercontext u))
        (usbdevfs-urb.actual-length u)))))
 
-(defun reset (s)
-  (usb-control-msg s
-		   #x40 #x10
-		   0 0
-		   (make-array 0 :element-type '(unsigned-byte))))
 
-(progn
-  (with-open-usb (s #x10c4 )
-    (reset s))
-  (sleep 1)
- (let* ((spi-data '(3 #x26 0 0 0 0))
-	(n (length spi-data))
-	(header `(0 0	;; reserved
-		    2	;; cmd id ;; simultaneous write/read
+(defun spi-read-async (s spi-data)
+ (let* ((n (length spi-data))
+	(header `(0 0	 ;; reserved
+		    2	 ;; cmd id ;; simultaneous write/read
 		    #x80 ;; reserved
 		    ;; number of bytes to read (little endian, 6 0 0 0 would be 6 bytes)
 		    ,(ldb (byte 8 0) n)
@@ -289,29 +280,60 @@ response is received"
 	(read2 (make-array (- n 2) :element-type '(unsigned-byte 8)))
 	(write2 (make-array (- n 2) :element-type '(unsigned-byte 8) :initial-contents (subseq spi-data 2))))
    (sb-sys:with-pinned-objects (read1 write1)
-     (with-open-usb (s #x10c4)
-       (setup-cp2130-for-dsp)
-       (usb-urb-bulk-async s #x82 read1 :context 123 :stream-id 0)
-       (usb-urb-bulk-async s #x01 write1 :context 456 :stream-id 0)
-       
-       (defparameter *bla*
-	 (list
-	  (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
-	  (usb-urb-reap-ndelay s) write1
-	  (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
-	  (usb-urb-reap-ndelay s) read1
+     (usb-urb-bulk-async s #x82 read1 :context 123 :stream-id 0)
+     (usb-urb-bulk-async s #x01 write1 :context 456 :stream-id 0)
+     (progn
+       (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
+       (usb-urb-reap-ndelay s)	;write1
+       (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
+       (usb-urb-reap-ndelay s)	;read1
 
-	  (usb-urb-bulk-async s #x82 read2 :context 1234 :stream-id 0)
-	  (usb-urb-bulk-async s #x01 write2 :context 4567 :stream-id 0)
+       (usb-urb-bulk-async s #x82 read2 :context 1234 :stream-id 0)
+       (usb-urb-bulk-async s #x01 write2 :context 4567 :stream-id 0)
 
-	  (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
-	  (usb-urb-reap-ndelay s) write2
-	  (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
-	  (usb-urb-reap-ndelay s) read2)
-	 )
-       ))))
+       (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
+       (usb-urb-reap-ndelay s)	;write2
+       (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
+       (usb-urb-reap-ndelay s)	;read2
+       read2))))
 
+(defun spi-write-small-async (s spi-data)
+ (let* ((n (length spi-data))
+	(header `(0 0	 ;; reserved
+		    2	 ;; cmd id ;; simultaneous write/read
+		    #x80 ;; reserved
+		    ;; number of bytes to read (little endian, 6 0 0 0 would be 6 bytes)
+		    ,(ldb (byte 8 0) n)
+		    ,(ldb (byte 8 (* 1 8)) n)
+		    ,(ldb (byte 8 (* 2 8)) n)
+		    ,(ldb (byte 8 (* 3 8)) n)))
+	(read1 (make-array n :element-type '(unsigned-byte 8)))
+	(write1 (map-into (make-array (+ n 8) :element-type '(unsigned-byte 8))
+			  #'identity
+			  (concatenate 'vector header spi-data))))
+   (assert (<= n 56))
+   (sb-sys:with-pinned-objects (read1 write1)
+     (usb-urb-bulk-async s #x82 read1 :context 123 :stream-id 0)
+     (usb-urb-bulk-async s #x01 write1 :context 456 :stream-id 0)
+     (progn
+       (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
+       (usb-urb-reap-ndelay s)	;write1
+       (sb-unix:unix-simple-poll (sb-posix:file-descriptor s) :output 100)
+       (usb-urb-reap-ndelay s)	;read1
+       read1))))
 
+#+nil
+(with-open-usb (s #x10c4)
+ (spi-read-async s '(3 #x26 0 0 0)))
+
+#+nil
+(progn
+  (with-open-usb (s #x10c4 )
+    (reset s))
+  (sleep 1)
+ )
+
+#+nil
 (progn
   (with-open-usb (s #x10c4 )
     (reset s))
@@ -335,9 +357,10 @@ response is received"
    (sb-sys:with-pinned-objects (read1 write1)
      (with-open-usb (s #x10c4)
        (let ((fd (sb-posix:file-descriptor s)))
-	 (setup-cp2130-for-dsp)
-
-	 (dotimes (i 400000)
+	 (dsp-on s)
+	 (setup-cp2130-for-dsp 375)
+	 
+	 (dotimes (i 1)
 	  (progn
 	    (usb-urb-bulk-async s #x82 read1 :context 123 :stream-id 0)
 	    (usb-urb-bulk-async s #x01 write1 :context 456 :stream-id 0)
@@ -357,6 +380,92 @@ response is received"
 	    )))
        
        ))))
+#+nil
+(progn
+  (with-open-usb (s #x10c4 )
+    (reset s))
+  (sleep 1)
+  (with-open-usb (s #x10c4)
+    (let ((fd (sb-posix:file-descriptor s)))
+     (let* ((spi-data '(3 #x26 0 0 0 0))
+	    (n (length spi-data))
+	    (header `(0 0  ;; reserved
+			2  ;; cmd id ;; simultaneous write/read
+			#x80 ;; reserved
+			;; number of bytes to read (little endian, 6 0 0 0 would be 6 bytes)
+			,(ldb (byte 8 0) n)
+			,(ldb (byte 8 (* 1 8)) n)
+			,(ldb (byte 8 (* 2 8)) n)
+			,(ldb (byte 8 (* 3 8)) n)))
+	    (read1 (make-array n :element-type '(unsigned-byte 8)))
+	    (write1 (map-into (make-array (+ 2 8) :element-type '(unsigned-byte 8))
+			      #'identity
+			      (concatenate 'vector header (subseq spi-data 0 2))))
+	    (read2 (make-array (- n 2) :element-type '(unsigned-byte 8)))
+	    (write2 (make-array (- n 2) :element-type '(unsigned-byte 8) :initial-contents (subseq spi-data 2))))
+       (sb-sys:with-pinned-objects (read1 write1)
+	 (setup-cp2130-for-dsp 12000)
+	 (dsp-off s)
+	 (sleep .1)
+	 (dsp-on s)
+	 (sleep 1)
+	 (dotimes (i 100)
+	   (progn
+	     (usb-urb-bulk-async s #x82 read1 :context 123 :stream-id 0)
+	     (usb-urb-bulk-async s #x01 write1 :context 456 :stream-id 0)
+	     
+	     (sb-unix:unix-simple-poll fd :output 100)
+	     (usb-urb-reap-ndelay s)	;write1
+	     (sb-unix:unix-simple-poll fd :output 100)
+	     (usb-urb-reap-ndelay s)	;read1
+
+	     (usb-urb-bulk-async s #x82 read2 :context 1234 :stream-id 0)
+	     (usb-urb-bulk-async s #x01 write2 :context 4567 :stream-id 0)
+
+	     (sb-unix:unix-simple-poll fd :output 100)
+	     (usb-urb-reap-ndelay s)	;write2
+	     (sb-unix:unix-simple-poll fd :output 100)
+	     (usb-urb-reap-ndelay s)	;read2
+	     ))))
+     (sleep .0001) ;; wait for boot to finish
+     (let* ((spi-data '(3 #x26 0 0 0 0 3 #x26 0 0 0 0 3 #x26 0 0 0 0 3 #x26 0 0 0 0))
+	    (n (length spi-data))
+	    (header `(0 0	;; reserved
+			2	;; cmd id ;; simultaneous write/read
+			#x80 ;; reserved
+			;; number of bytes to read (little endian, 6 0 0 0 would be 6 bytes)
+			,(ldb (byte 8 0) n)
+			,(ldb (byte 8 (* 1 8)) n)
+			,(ldb (byte 8 (* 2 8)) n)
+			,(ldb (byte 8 (* 3 8)) n)))
+	    (read1 (make-array n :element-type '(unsigned-byte 8)))
+	    (write1 (map-into (make-array (+ 2 8) :element-type '(unsigned-byte 8))
+			      #'identity
+			      (concatenate 'vector header (subseq spi-data 0 2))))
+	    (read2 (make-array (- n 2) :element-type '(unsigned-byte 8)))
+	    (write2 (make-array (- n 2) :element-type '(unsigned-byte 8) :initial-contents (subseq spi-data 2))))
+       (sb-sys:with-pinned-objects (read1 write1)
+	 (dotimes (i 1)
+	   (progn
+	     (usb-urb-bulk-async s #x82 read1 :context 123 :stream-id 0)
+	     (usb-urb-bulk-async s #x01 write1 :context 456 :stream-id 0)
+	     
+	     (sb-unix:unix-simple-poll fd :output 100)
+	     (usb-urb-reap-ndelay s)	;write1
+	     (sb-unix:unix-simple-poll fd :output 100)
+	     (usb-urb-reap-ndelay s)	;read1
+
+	     (usb-urb-bulk-async s #x82 read2 :context 1234 :stream-id 0)
+	     (usb-urb-bulk-async s #x01 write2 :context 4567 :stream-id 0)
+
+	     (sb-unix:unix-simple-poll fd :output 100)
+	     (usb-urb-reap-ndelay s)	;write2
+	     (sb-unix:unix-simple-poll fd :output 100)
+	     (usb-urb-reap-ndelay s)	;read2
+	     ))
+	 
+	 ))))
+  )
 
 
 #+nil
