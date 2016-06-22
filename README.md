@@ -9,7 +9,7 @@
 - [3 Compilation][9722]
 
 ###### \[in package NATIVE-USB\]
-This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi or cl-autowrap.
+This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi.
 
 For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
 
@@ -17,8 +17,7 @@ For debugging and functional verification I use `sudo modprobe usbmon` and `wire
 
 ## 1 Installation
 
-Make sure your user has read and write permissions for the USB device,
-e.g.:
+Make sure your user has read and write permissions for the USB device, e.g.:
 
 ```
 crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
@@ -44,12 +43,12 @@ ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
 ## 2 Usage
 
 ```common-lisp
-;(eval-when (:load-toplevel :execute :compile-toplevel)
-;  (ql:quickload :native-usb))
-;(in-package :native-usb)
-;(with-open-usb (s #x10c4 :product-id #x87a0)
-;  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
-;    (usb-control-msg s #xc0 #x22 0 0 buf)))
+(eval-when (:load-toplevel :execute :compile-toplevel)
+  (ql:quickload :native-usb))
+(in-package :native-usb)
+(with-open-usb (s #x10c4 :product-id #x87a0)
+  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
+    (usb-control-msg s #xc0 #x22 0 0 buf)))
 ```
 
 
@@ -82,8 +81,7 @@ and generate the foreign function interface for usbdevfs. It
 generates a few files in /tmp. If your architecture is AMD64,
 running C2FFI again is not required. It should suffice to load
 native-usb-ffi.lisp with the definitions that C2FFI generated on my
-system. In this case neither the c2ffi binary nor the Common Lisp
-package cl-autowrap are required.
+system. In this case the c2ffi binary is not required.
 
   [33d1]: #x-28NATIVE-USB-3A-40INSTALL-SEC-20MGL-PAX-3ASECTION-29 "Installation"
   [4e5e]: #x-28NATIVE-USB-3A-40USAGE-SEC-20MGL-PAX-3ASECTION-29 "Usage"
