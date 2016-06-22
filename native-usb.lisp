@@ -57,6 +57,8 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 
 ;; https://github.com/scanlime/ram-tracer/blob/a8f935ca9d275c970a89fca1fed9585f51224edb/host/fastftdi.c
 
+(defparameter *spec-path* (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/"
+					   (user-homedir-pathname)))
 
 #+nil
 (truncate

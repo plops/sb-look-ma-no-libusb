@@ -58,12 +58,11 @@
   generates a few files in /tmp. If your architecture is AMD64,
   running C2FFI again is not required. It should suffice to load
   native-usb-ffi.lisp with the definitions that C2FFI generated on my
-  system. In this case neither the c2ffi binary nor the Common Lisp
-  package cl-autowrap are required.")
+  system. In this case the c2ffi binary is not required.")
 
 
 (mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
-  "This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required IOCTL type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi or cl-autowrap.
+  "This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required IOCTL type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi.
 
 For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
 "

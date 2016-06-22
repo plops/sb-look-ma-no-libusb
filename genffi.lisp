@@ -1,7 +1,6 @@
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (ql:quickload :cl-autowrap)
-  (defparameter *spec-path* (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/"
-					     (user-homedir-pathname))))
+  )
 
 (in-package :native-usb)
 
