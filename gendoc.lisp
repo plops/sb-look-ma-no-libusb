@@ -60,6 +60,11 @@
   native-usb-ffi.lisp with the definitions that C2FFI generated on my
   system. In this case the c2ffi binary is not required.")
 
+(mgl-pax:defsection @doc-sec (:title "Updating Documentation")
+  "I use mgl-pax to generate the documentation. Whenever docstrings
+  have been changed or new functions were added, update and run the
+  code in gendoc.lisp to update the README.md file.")
+
 
 (mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
   "This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required IOCTL type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi.
@@ -68,7 +73,8 @@ For debugging and functional verification I use `sudo modprobe usbmon` and `wire
 "
   (@install-sec section)
   (@usage-sec section)
-  (@compilation-sec section))
+  (@compilation-sec section)
+  (@doc-sec section))
 
 
 

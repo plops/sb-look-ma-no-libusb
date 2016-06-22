@@ -7,6 +7,7 @@
 - [1 Installation][33d1]
 - [2 Usage][4e5e]
 - [3 Compilation][9722]
+- [4 Updating Documentation][77a6]
 
 ###### \[in package NATIVE-USB\]
 This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi.
@@ -83,7 +84,16 @@ running C2FFI again is not required. It should suffice to load
 native-usb-ffi.lisp with the definitions that C2FFI generated on my
 system. In this case the c2ffi binary is not required.
 
+<a id='x-28NATIVE-USB-3A-40DOC-SEC-20MGL-PAX-3ASECTION-29'></a>
+
+## 4 Updating Documentation
+
+I use mgl-pax to generate the documentation. Whenever docstrings
+have been changed or new functions were added, update and run the
+code in gendoc.lisp to update the README.md file.
+
   [33d1]: #x-28NATIVE-USB-3A-40INSTALL-SEC-20MGL-PAX-3ASECTION-29 "Installation"
   [4e5e]: #x-28NATIVE-USB-3A-40USAGE-SEC-20MGL-PAX-3ASECTION-29 "Usage"
+  [77a6]: #x-28NATIVE-USB-3A-40DOC-SEC-20MGL-PAX-3ASECTION-29 "Updating Documentation"
   [9722]: #x-28NATIVE-USB-3A-40COMPILATION-SEC-20MGL-PAX-3ASECTION-29 "Compilation"
   [977e]: #x-28NATIVE-USB-3AWITH-OPEN-USB-20-28MGL-PAX-3AMACRO-29-29 "(NATIVE-USB:WITH-OPEN-USB (MGL-PAX:MACRO))"
