@@ -60,7 +60,7 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 ;; on amd64 we can load the pre existing macros. on other platforms we have to run c2ffi
 
 #+x86-64
-(load "generated-ffi")
+(load "generated-ffi-amd64")
 #-x86-64
 (load "genffi")
 
