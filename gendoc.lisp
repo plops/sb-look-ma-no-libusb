@@ -16,35 +16,9 @@
 
 (in-package :native-usb)
 
-(mgl-pax:defsection @compilation-sec (:title "Compilation")
-  "This code uses C2FFI to parse the header file linux/usbdevice_fs.h
-  and generate the foreign function interface for usbdevfs. It
-  generates a few files in /tmp. If your architecture is AMD64,
-  running C2FFI again is not required. It should suffice to load
-  native-usb-ffi.lisp with the definitions that C2FFI generated on my
-  system. In this case neither the c2ffi binary nor the Common Lisp
-  package cl-autowrap are required.")
 
-(mgl-pax:defsection @usage-sec (:title "Usage")
-  "```common-lisp
-;(eval-when (:load-toplevel :execute :compile-toplevel)
-;  (ql:quickload :native-usb))
-;(in-package :native-usb)
-;(with-open-usb (s #x10c4 :product-id #x87a0)
-;  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
-;    (usb-control-msg s #xc0 #x22 0 0 buf)))
-```
-"
-  (with-open-usb macro)		
-  (usb-control-msg function)
-  (usb-bulk-transfer function)
-  )
-
-(mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
-  "This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required IOCTL type and constant definitions.
-
-
-Make sure your user has read and write permissions for the USB device,
+(mgl-pax:defsection @install-sec (:title "Installation")
+  "Make sure your user has read and write permissions for the USB device,
 e.g.:
 
 ```
@@ -64,10 +38,42 @@ cd ~/stage/
 git clone https://github.com/plops/sb-look-ma-no-libusb
 ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
 ```
+")
+
+(mgl-pax:defsection @usage-sec (:title "Usage")
+  "```common-lisp
+;(eval-when (:load-toplevel :execute :compile-toplevel)
+;  (ql:quickload :native-usb))
+;(in-package :native-usb)
+;(with-open-usb (s #x10c4 :product-id #x87a0)
+;  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
+;    (usb-control-msg s #xc0 #x22 0 0 buf)))
+```
+"
+  (with-open-usb macro)		
+  (usb-control-msg function)
+  (usb-bulk-transfer function)
+  )
+
+(mgl-pax:defsection @compilation-sec (:title "Compilation")
+  "This code uses C2FFI to parse the header file linux/usbdevice_fs.h
+  and generate the foreign function interface for usbdevfs. It
+  generates a few files in /tmp. If your architecture is AMD64,
+  running C2FFI again is not required. It should suffice to load
+  native-usb-ffi.lisp with the definitions that C2FFI generated on my
+  system. In this case neither the c2ffi binary nor the Common Lisp
+  package cl-autowrap are required.")
+
+
+(mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
+  "This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required IOCTL type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi or cl-autowrap.
+
+
 
 
 For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
 "
+  (@install-sec section)
   (@usage-sec section)
   (@compilation-sec section))
 

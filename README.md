@@ -4,11 +4,18 @@
 
 ## Table of Contents
 
-- [1 Usage][4e5e]
-- [2 Compilation][9722]
+- [1 Installation][33d1]
+- [2 Usage][4e5e]
+- [3 Compilation][9722]
 
 ###### \[in package NATIVE-USB\]
-This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions.
+This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi or cl-autowrap.
+
+For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
+
+<a id='x-28NATIVE-USB-3A-40INSTALL-SEC-20MGL-PAX-3ASECTION-29'></a>
+
+## 1 Installation
 
 Make sure your user has read and write permissions for the USB device,
 e.g.:
@@ -31,11 +38,10 @@ git clone https://github.com/plops/sb-look-ma-no-libusb
 ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
 ```
 
-For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
 
 <a id='x-28NATIVE-USB-3A-40USAGE-SEC-20MGL-PAX-3ASECTION-29'></a>
 
-## 1 Usage
+## 2 Usage
 
 ```common-lisp
 ;(eval-when (:load-toplevel :execute :compile-toplevel)
@@ -69,7 +75,7 @@ For debugging and functional verification I use `sudo modprobe usbmon` and `wire
 
 <a id='x-28NATIVE-USB-3A-40COMPILATION-SEC-20MGL-PAX-3ASECTION-29'></a>
 
-## 2 Compilation
+## 3 Compilation
 
 This code uses C2FFI to parse the header file linux/usbdevice\_fs.h
 and generate the foreign function interface for usbdevfs. It
@@ -79,6 +85,7 @@ native-usb-ffi.lisp with the definitions that C2FFI generated on my
 system. In this case neither the c2ffi binary nor the Common Lisp
 package cl-autowrap are required.
 
+  [33d1]: #x-28NATIVE-USB-3A-40INSTALL-SEC-20MGL-PAX-3ASECTION-29 "Installation"
   [4e5e]: #x-28NATIVE-USB-3A-40USAGE-SEC-20MGL-PAX-3ASECTION-29 "Usage"
   [9722]: #x-28NATIVE-USB-3A-40COMPILATION-SEC-20MGL-PAX-3ASECTION-29 "Compilation"
   [977e]: #x-28NATIVE-USB-3AWITH-OPEN-USB-20-28MGL-PAX-3AMACRO-29-29 "(NATIVE-USB:WITH-OPEN-USB (MGL-PAX:MACRO))"
