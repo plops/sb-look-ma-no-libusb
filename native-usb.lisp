@@ -6,23 +6,16 @@
 
 (in-package :native-usb)
 
-
-(eval-when (:compile-toplevel :execute :load-toplevel)
-  (ql:quickload :cl-autowrap)
-  (defparameter *spec-path* (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/"
-					     (user-homedir-pathname))))
-
 (defun get-usb-busnum-and-devnum (vendor-id &optional (product-id 0))
   (declare (type (unsigned-byte 16) vendor-id product-id)
 	   (ignorable product-id))
   "Scan all USB devices for matching vendor-id and return its bus and
-device number. 
+ device number. 
 
-Example usage:
-```
-(get-usb-busnum-and-devnum #x10c4 #x87a0) => 1,2
-```
-"
+ Example usage:
+ ```
+ (get-usb-busnum-and-devnum #x10c4 #x87a0) => 1,2
+ ```"
   (let* ((vendor-files (directory "/sys/bus/usb/devices/usb*/*/idVendor"))
 	 (vendors (mapcar #'(lambda (fn)
 			      (with-open-file (s fn)
@@ -63,50 +56,6 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 ;; https://www.kernel.org/doc/htmldocs/usb/usbfs-ioctl.html
 
 ;; https://github.com/scanlime/ram-tracer/blob/a8f935ca9d275c970a89fca1fed9585f51224edb/host/fastftdi.c
-
-
-
-
-(progn
-  (with-open-file (s "/tmp/usb0.h"
-		     :direction :output
-		     :if-does-not-exist :create
-		     :if-exists :supersede)
-    (format s "#include \"/usr/include/linux/usbdevice_fs.h\"~%"))
-  (autowrap::run-check autowrap::*c2ffi-program*
-		       (autowrap::list "/tmp/usb0.h"
-				       "-D" "null"
-				       "-M" "/tmp/usb_macros.h"
-				       "-A" "x86_64-pc-linux-gnu"
-				       ))
-
-  
-  (with-open-file (s "/tmp/usb1.h"
-		     :direction :output
-		     :if-does-not-exist :create
-		     :if-exists :supersede)
-    
-    (format s "#include <sys/types.h>~%")
-    (format s "#include <sys/stat.h>~%")
-    (format s "#include <sys/ioctl.h>~%")
-    (format s "#include \"/tmp/usb0.h\"~%")
-    (format s "#include \"/tmp/usb_macros.h\"~%")))
-
-(autowrap:c-include "/tmp/usb1.h"
-		    :spec-path *spec-path*
-		    :exclude-arch ("arm-pc-linux-gnu"
-				   "i386-unknown-freebsd"
-				   "i686-apple-darwin9"
-				   "i686-pc-linux-gnu"
-				   "i686-pc-windows-msvc"
-				   "x86_64-apple-darwin9"
-					;"x86_64-pc-linux-gnu"
-				   "x86_64-pc-windows-msvc"
-				   "x86_64-unknown-freebsd")
-		    :exclude-sources ("/usr/include/linux/types.h"
-				      "/usr/include/linux/magic.h")
-		    :include-sources ("/usr/include/linux/ioctl.h")
-		    :trace-c2ffi t)
 
 
 #+nil
