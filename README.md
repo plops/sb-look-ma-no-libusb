@@ -4,9 +4,10 @@
 
 ## Table of Contents
 
+- [1 Compilation][9722]
 
 ###### \[in package NATIVE-USB\]
-This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autwrap to obtain the required `IOCTL` type and constant definitions.
+This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions.
 
 Make sure your user has read and write permissions for the USB device,
 e.g.:
@@ -60,4 +61,17 @@ For debugging and functional verification I use `sudo modprobe usbmon` and `wire
 
     Initiate a synchronous USB bulk transfer (read or write, depending on `EP`).
 
+<a id='x-28NATIVE-USB-3A-40COMPILATION-SEC-20MGL-PAX-3ASECTION-29'></a>
+
+## 1 Compilation
+
+This code uses C2FFI to parse the header file linux/usbdevice\_fs.h
+and generate the foreign function interface for usbdevfs. It
+generates a few files in /tmp. If your architecture is AMD64,
+running C2FFI again is not required. It should suffice to load
+native-usb-ffi.lisp with the definitions that C2FFI generated on my
+system. In this case neither the c2ffi binary nor the Common Lisp
+package cl-autowrap are required.
+
+  [9722]: #x-28NATIVE-USB-3A-40COMPILATION-SEC-20MGL-PAX-3ASECTION-29 "Compilation"
   [977e]: #x-28NATIVE-USB-3AWITH-OPEN-USB-20-28MGL-PAX-3AMACRO-29-29 "(NATIVE-USB:WITH-OPEN-USB (MGL-PAX:MACRO))"
