@@ -25,6 +25,21 @@
   system. In this case neither the c2ffi binary nor the Common Lisp
   package cl-autowrap are required.")
 
+(mgl-pax:defsection @usage-sec (:title "Usage")
+  "```common-lisp
+;(eval-when (:load-toplevel :execute :compile-toplevel)
+;  (ql:quickload :native-usb))
+;(in-package :native-usb)
+;(with-open-usb (s #x10c4 :product-id #x87a0)
+;  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
+;    (usb-control-msg s #xc0 #x22 0 0 buf)))
+```
+"
+  (with-open-usb macro)		
+  (usb-control-msg function)
+  (usb-bulk-transfer function)
+  )
+
 (mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
   "This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required IOCTL type and constant definitions.
 
@@ -50,20 +65,10 @@ git clone https://github.com/plops/sb-look-ma-no-libusb
 ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
 ```
 
-```common-lisp
-;(eval-when (:load-toplevel :execute :compile-toplevel)
-;  (ql:quickload :native-usb))
-;(in-package :native-usb)
-;(with-open-usb (s #x10c4 :product-id #x87a0)
-;  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
-;    (usb-control-msg s #xc0 #x22 0 0 buf)))
-```
 
 For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
 "
-  (with-open-usb macro)		
-  (usb-control-msg function)
-  (usb-bulk-transfer function)
+  (@usage-sec section)
   (@compilation-sec section))
 
 
