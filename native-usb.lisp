@@ -60,7 +60,8 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 ;; on amd64 we can load the pre existing macros. on other platforms we have to run c2ffi
 
 #+x86-64
-(load "generated-ffi-amd64")
+(eval-when (:compile-toplevel)
+  (load "generated-ffi-amd64"))
 #-x86-64
 (load "genffi")
 
@@ -153,7 +154,7 @@ response is received"
 	    (usbdevfs-urb.actual-length u) n
 	    (usbdevfs-urb.start-frame u) 0
 	    ;; stream-id is only used for bulk streams
-	    (usbdevfs-urb.field-343.stream-id u) stream-id
+	    (usbdevfs-urb.field-907.stream-id u) stream-id ;; FIXME why does this name change
 	    (usbdevfs-urb.error-count u) 0
 	    (usbdevfs-urb.signr u) 0
 	    (usbdevfs-urb.usercontext u) (sb-sys:int-sap context))
