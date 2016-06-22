@@ -3,6 +3,9 @@
 
 (in-package :native-usb)
 
+(defparameter *spec-path* (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/"
+					   (user-homedir-pathname)))
+
 (progn
   (with-open-file (s "/tmp/usb0.h"
 		     :direction :output

@@ -5,5 +5,5 @@
   :maintainer "Martin Kielhorn <kielhorn.martin@gmail.com>"
   :author "Martin Kielhorn <kielhorn.martin@gmail.com>"
   :licence "GPLv3"
-  :depends-on (:sb-bsd-sockets :cl-autwrap)
+  :depends-on (:sb-bsd-sockets :cl-autowrap)
   :components ((:file "native-usb")))
