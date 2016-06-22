@@ -61,7 +61,8 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 
 #+x86-64
 (eval-when (:compile-toplevel)
-  (load "generated-ffi-amd64"))
+  (compile (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/generated-ffi-amd64" (user-homedir-pathname)))
+  (load (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/generated-ffi-amd64" (user-homedir-pathname))))
 #-x86-64
 (load "genffi")
 
