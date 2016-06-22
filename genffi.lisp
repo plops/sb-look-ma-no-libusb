@@ -1,6 +1,5 @@
 (eval-when (:compile-toplevel :execute :load-toplevel)
-  (ql:quickload :cl-autowrap)
-  )
+  (ql:quickload :cl-autowrap))
 
 (in-package :native-usb)
 
