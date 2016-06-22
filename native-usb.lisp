@@ -57,7 +57,12 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 
 ;; https://github.com/scanlime/ram-tracer/blob/a8f935ca9d275c970a89fca1fed9585f51224edb/host/fastftdi.c
 
+;; on amd64 we can load the pre existing macros. on other platforms we have to run c2ffi
+
+#+x86-64
 (load "generated-ffi")
+#-x86-64
+(load "genffi")
 
 #+nil
 (truncate
