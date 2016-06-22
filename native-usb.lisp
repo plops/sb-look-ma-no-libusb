@@ -1,62 +1,15 @@
-#+generate-native-usb-doc
-(mgl-pax:define-package :native-usb
-    (:documentation "Pure Common Lisp based USB interface. Requires SBCL and Linux.")
-  (:use #:cl))
-#-generate-native-usb-doc
 (defpackage :native-usb
   (:use #:cl)
   (:export #:with-open-usb
 	   #:usb-control-msg
 	   #:usb-bulk-transfer))
 
-
 (in-package :native-usb)
-
-#+generate-native-usb-doc
-(mgl-pax:defsection @native-usb-manual (:title "Native USB manual")
-  "This is an pure Common Lisp interface for Linux USB. It requires SBCL bacause I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autwrap to obtain the required IOCTL type and constant definitions.
-
-
-Make sure your user has read and write permissions for the USB device,
-e.g.:
-
-```
-crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
-```
-
-Open the a USB stream using the macro `WITH-OPEN-USB` and send control
-or bulk messages. Example: 
-
-The following commands should install this library into a local
-quicklisp installation.  Note that a few header files will be
-generated in /tmp.
-
-```
-mkdir ~/stage/
-cd ~/stage/
-git clone https://github.com/plops/sb-look-ma-no-libusb
-ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
-```
-
-```common-lisp
-(eval-when (:load-toplevel :execute :compile-toplevel)
-  (ql:quickload :native-usb))
-(in-package :native-usb)
-(with-open-usb (s #x10c4 :product-id #x87a0)
-  (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
-    (usb-control-msg s #xc0 #x22 0 0 buf)))
-```
-
-For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
-"
-  ;(with-open-usb macro)		
-  (usb-control-msg function)
-  (usb-bulk-transfer function))
 
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (ql:quickload :cl-autowrap)
-  (defparameter *spec-path* (merge-pathnames "stage/sb-look-ma-no-libusb/"
+  (defparameter *spec-path* (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/"
 					     (user-homedir-pathname))))
 
 (defun get-usb-busnum-and-devnum (vendor-id &optional (product-id 0))
