@@ -167,7 +167,7 @@ response is received"
 	    (usbdevfs-urb.actual-length u) n
 	    (usbdevfs-urb.start-frame u) 0
 	    ;; stream-id is only used for bulk streams
-	    (usbdevfs-urb.field-907.stream-id u) stream-id ;; FIXME why does this name change
+	    (usbdevfs-urb.field-803.stream-id u) stream-id ;; FIXME why does this name change
 	    (usbdevfs-urb.error-count u) 0
 	    (usbdevfs-urb.signr u) 0
 	    (usbdevfs-urb.usercontext u) (sb-sys:int-sap context))
