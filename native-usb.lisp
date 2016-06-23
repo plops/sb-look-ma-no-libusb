@@ -1,3 +1,5 @@
+#+nil
+(ql:quickload "cl-autowrap")
 (defpackage :native-usb
   (:use #:cl)
   (:export #:with-open-usb
@@ -60,7 +62,7 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 ;; on amd64 we can load the pre existing macros. on other platforms we have to run c2ffi
 
 (autowrap:c-include "usb1.h"
-		    :spec-path *spec-path*
+		    ;:spec-path *spec-path*
 		    :exclude-arch ("arm-pc-linux-gnu"
 				   "i386-unknown-freebsd"
 				   "i686-apple-darwin9"
