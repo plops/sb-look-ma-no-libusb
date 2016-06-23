@@ -59,12 +59,21 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 
 ;; on amd64 we can load the pre existing macros. on other platforms we have to run c2ffi
 
-#+x86-64
-(eval-when (:compile-toplevel)
-  #+nil (compile-file (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/generated-ffi-amd64.lisp" (user-homedir-pathname)))
-  (load (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/generated-ffi-amd64" (user-homedir-pathname))))
-#-x86-64
-(load "genffi")
+(autowrap:c-include "usb1.h"
+		    :spec-path *spec-path*
+		    :exclude-arch ("arm-pc-linux-gnu"
+				   "i386-unknown-freebsd"
+				   "i686-apple-darwin9"
+				   "i686-pc-linux-gnu"
+				   "i686-pc-windows-msvc"
+				   "x86_64-apple-darwin9"
+					;"x86_64-pc-linux-gnu"
+				   "x86_64-pc-windows-msvc"
+				   "x86_64-unknown-freebsd")
+		    :exclude-sources ("/usr/include/linux/types.h"
+				      "/usr/include/linux/magic.h")
+		    :include-sources ("/usr/include/linux/ioctl.h")
+		    :trace-c2ffi t)
 
 #+nil
 (truncate
