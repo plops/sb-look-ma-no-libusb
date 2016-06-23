@@ -8,8 +8,11 @@
 
 (in-package :native-usb)
 
+(defparameter *spec-path* (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/"
+					   (user-homedir-pathname)))
+
 (autowrap:c-include "usb1.h"
-		    ;:spec-path *spec-path*
+		    :spec-path *spec-path*
 		    :exclude-arch ("arm-pc-linux-gnu"
 				   "i386-unknown-freebsd"
 				   "i686-apple-darwin9"
