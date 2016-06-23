@@ -1,3 +1,5 @@
+;; you only need to run this, when generating a new spec file with c2ffi
+
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (ql:quickload :cl-autowrap))
 
