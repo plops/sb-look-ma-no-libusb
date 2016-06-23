@@ -75,7 +75,8 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 		    :exclude-sources ("/usr/include/linux/types.h"
 				      "/usr/include/linux/magic.h")
 		    :include-sources ("/usr/include/linux/ioctl.h")
-		    :trace-c2ffi t)
+		    ;:trace-c2ffi t
+		    )
 
 #+nil
 (truncate
