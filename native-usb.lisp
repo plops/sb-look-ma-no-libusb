@@ -8,6 +8,23 @@
 
 (in-package :native-usb)
 
+(autowrap:c-include "usb1.h"
+		    ;:spec-path *spec-path*
+		    :exclude-arch ("arm-pc-linux-gnu"
+				   "i386-unknown-freebsd"
+				   "i686-apple-darwin9"
+				   "i686-pc-linux-gnu"
+				   "i686-pc-windows-msvc"
+				   "x86_64-apple-darwin9"
+					;"x86_64-pc-linux-gnu"
+				   "x86_64-pc-windows-msvc"
+				   "x86_64-unknown-freebsd")
+		    :exclude-sources ("/usr/include/linux/types.h"
+				      "/usr/include/linux/magic.h")
+		    :include-sources ("/usr/include/linux/ioctl.h")
+		    ;:trace-c2ffi t
+		    )
+
 (defun get-usb-busnum-and-devnum (vendor-id &optional (product-id 0))
   (declare (type (unsigned-byte 16) vendor-id product-id)
 	   (ignorable product-id))
@@ -61,22 +78,7 @@ obtained from STREAM using SB-POSIX:FILE-DESCRIPTOR and PATHNAME."
 
 ;; on amd64 we can load the pre existing macros. on other platforms we have to run c2ffi
 
-(autowrap:c-include "usb1.h"
-		    ;:spec-path *spec-path*
-		    :exclude-arch ("arm-pc-linux-gnu"
-				   "i386-unknown-freebsd"
-				   "i686-apple-darwin9"
-				   "i686-pc-linux-gnu"
-				   "i686-pc-windows-msvc"
-				   "x86_64-apple-darwin9"
-					;"x86_64-pc-linux-gnu"
-				   "x86_64-pc-windows-msvc"
-				   "x86_64-unknown-freebsd")
-		    :exclude-sources ("/usr/include/linux/types.h"
-				      "/usr/include/linux/magic.h")
-		    :include-sources ("/usr/include/linux/ioctl.h")
-		    ;:trace-c2ffi t
-		    )
+
 
 #+nil
 (truncate
