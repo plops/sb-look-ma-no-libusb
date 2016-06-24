@@ -26,7 +26,7 @@
 #+nil
 (defparameter *spec-path* (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/"
 					   (user-homedir-pathname)))
-#+nil
+
 (autowrap:c-include "usb1.h"
 		    :spec-path (merge-pathnames
 				"quicklisp/local-projects/sb-look-ma-no-libusb/"
@@ -45,6 +45,8 @@
 		    :include-sources ("/usr/include/linux/ioctl.h")
 		    ;:trace-c2ffi t
 		    )
+
+#+nil
 (eval-when (:compile-toplevel)
  (load (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/generated-ffi-amd64"
 			(user-homedir-pathname))))
