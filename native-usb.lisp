@@ -1,5 +1,20 @@
 #+nil
+(ql:uninstall "cl-autowrap")
+
+#+nil
+(defparameter *bla* (ql-dist::release (ql::find-system "cl-autowrap")))
+#+nil
+(ql-dist:uninstall *bla*)
+
+#+nil
+(ql-dist:installed-systems *bla*)
+
+#+nil
+(ql:register-local-projects)
+
+#+nil
 (ql:quickload "cl-autowrap")
+
 (defpackage :native-usb
   (:use #:cl)
   (:export #:with-open-usb
@@ -178,7 +193,7 @@ response is received"
 	    (usbdevfs-urb.actual-length u) n
 	    (usbdevfs-urb.start-frame u) 0
 	    ;; stream-id is only used for bulk streams
-	    (usbdevfs-urb.field-907.stream-id u) stream-id ;; FIXME why does this name change
+	    (usbdevfs-urb.stream-id u) stream-id ;; FIXME why does this name change
 	    (usbdevfs-urb.error-count u) 0
 	    (usbdevfs-urb.signr u) 0
 	    (usbdevfs-urb.usercontext u) (sb-sys:int-sap context))
