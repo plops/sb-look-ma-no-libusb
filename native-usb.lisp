@@ -19,7 +19,9 @@
   (:use #:cl)
   (:export #:with-open-usb
 	   #:usb-control-msg
-	   #:usb-bulk-transfer))
+	   #:usb-bulk-transfer
+	   #:usb-urb-bulk-async
+	   #:usb-urb-reap-ndelay))
 
 (in-package :native-usb)
 
