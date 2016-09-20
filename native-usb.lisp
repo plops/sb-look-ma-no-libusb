@@ -63,7 +63,7 @@
  ```
  (get-usb-busnum-and-devnum #x10c4 #x87a0) => 1,2
  ```"
-  (let* ((vendor-files (directory "/sys/bus/usb/devices/usb*/*/idVendor"))
+  (let* ((vendor-files (directory "/sys/bus/usb/devices/*/*/idVendor"))
 	 (vendors (mapcar #'(lambda (fn)
 			      (with-open-file (s fn)
 				(parse-integer (read-line s) :radix 16)))

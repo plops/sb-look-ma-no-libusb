@@ -22,5 +22,5 @@
 		    :no-functions t
 		    )
 
-(c-let ((u 'usbdevfs-urb :free t))
+(c-let ((u '(:struct usbdevfs-urb) :free t))
   (print u))
