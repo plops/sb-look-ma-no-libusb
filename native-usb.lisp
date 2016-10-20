@@ -47,17 +47,20 @@
 				   "x86_64-unknown-freebsd")
 		    :exclude-sources ("/usr/include/linux/types.h"
 				      "/usr/include/linux/magic.h"
-				      "/usr/include/asm-generic/int-ll64.h"
-				      "/usr/include/linux/posix_types.h"
-				      "/usr/include/asm/posix_types_64.h"
-				      "/usr/include/asm-generic/posix_types.h"
-				      "/usr/include/linux/ioctl.h"
+				      ;; "/usr/include/asm-generic/int-ll64.h"
+				      ;; "/usr/include/linux/posix_types.h"
+				      ;; "/usr/include/asm/posix_types_64.h"
+				      ;; "/usr/include/asm-generic/posix_types.h"
+				      ;; ;"/usr/include/linux/ioctl.h"
 				      "/usr/include/*"
-				      "/usr/include/asm/*"
-				      "/usr/include/linux/*"
-				      "/usr/include/asm-generic/*")
+				      ;; "/usr/include/asm/*"
+				      ;; "/usr/include/linux/*"
+				      ;; "/usr/include/asm-generic/*"
+
+				      )
 		    :exclude-constants ("MAGIC")
-		    ;:include-sources ("/usr/include/linux/ioctl.h")
+		    :include-sources ("/usr/include/linux/ioctl.h"
+				      "/usr/include/linux/usbdevice_fs.h")
 		    :sysincludes (list "/usr/include"
 				       "/usr/lib64/gcc/x86_64-pc-linux-gnu/4.9.3/include"
 				       )
