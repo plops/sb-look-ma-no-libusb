@@ -35,6 +35,8 @@
 				(user-homedir-pathname)))))
 
 					;"/usr/include/sys/stat.h"
+
+#+nil
 (autowrap:c-include "/usr/include/linux/usbdevice_fs.h"
 		    :spec-path (merge-pathnames
 				"quicklisp/local-projects/sb-look-ma-no-libusb/"
@@ -61,6 +63,7 @@
 		    :trace-c2ffi t
 		    )
 
+#+nil
 (autowrap:c-include "/usr/include/asm/ioctl.h"
 		    :spec-path (merge-pathnames
 				"quicklisp/local-projects/sb-look-ma-no-libusb/"
@@ -84,7 +87,6 @@
 		    :trace-c2ffi t
 		    )
 
-#+nil
 (autowrap:c-include "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/usb1.h"
 		    :spec-path (merge-pathnames
 				"quicklisp/local-projects/sb-look-ma-no-libusb/"
