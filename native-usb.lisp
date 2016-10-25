@@ -29,7 +29,12 @@
 (defparameter *spec-path* (merge-pathnames "quicklisp/local-projects/sb-look-ma-no-libusb/"
 					   (user-homedir-pathname)))
 
+#+nil
+(delete-file (first (directory (merge-pathnames
+				"quicklisp/local-projects/sb-look-ma-no-libusb/*.spec"
+				(user-homedir-pathname)))))
 
+					;"/usr/include/sys/stat.h"
 (autowrap:c-include "/usr/include/linux/usbdevice_fs.h"
 		    :spec-path (merge-pathnames
 				"quicklisp/local-projects/sb-look-ma-no-libusb/"
@@ -45,35 +50,24 @@
 					;"x86_64-pc-linux-gnu"
 				   "x86_64-pc-windows-msvc"
 				   "x86_64-unknown-freebsd")
-		    :exclude-sources ("/usr/include/linux/types.h"
-				      "/usr/include/linux/magic.h"
-				      ;; "/usr/include/asm-generic/int-ll64.h"
-				      ;; "/usr/include/linux/posix_types.h"
-				      ;; "/usr/include/asm/posix_types_64.h"
-				      ;; "/usr/include/asm-generic/posix_types.h"
-				      ;; ;"/usr/include/linux/ioctl.h"
-				      "/usr/include/*"
-				      ;; "/usr/include/asm/*"
-				      ;; "/usr/include/linux/*"
-				      ;; "/usr/include/asm-generic/*"
-
-				      )
+		    :exclude-sources ("/usr/include/*")
+		    :include-definitions ("__u8" "__u16" "__u32" "stat" "ioctl")
 		    :exclude-constants ("MAGIC")
-		    :include-sources ("/usr/include/linux/ioctl.h"
-				      "/usr/include/linux/usbdevice_fs.h")
+		    :exclude-definitions ("number_of_packets" "stream_id")
+		    :include-sources ("/usr/include/linux/usbdevice_fs.h"
+				      "/usr/include/linux/ioctl.h")
 		    :sysincludes (list "/usr/include"
-				       "/usr/lib64/gcc/x86_64-pc-linux-gnu/4.9.3/include"
-				       )
-		    ;:trace-c2ffi t
+				       "/usr/lib64/gcc/x86_64-pc-linux-gnu/4.9.3/include")
+		    :trace-c2ffi t
 		    )
 
-#+nil
-(autowrap:c-include "usb1.h"
+(autowrap:c-include "/usr/include/asm/ioctl.h"
 		    :spec-path (merge-pathnames
 				"quicklisp/local-projects/sb-look-ma-no-libusb/"
 				(user-homedir-pathname))
 		    :exclude-arch ("arm-pc-linux-gnu"
 				   "i386-unknown-freebsd"
+				   "i386-unknown-openbsd"
 				   "i686-apple-darwin9"
 				   "i686-pc-linux-gnu"
 				   "i686-pc-windows-msvc"
@@ -82,13 +76,43 @@
 					;"x86_64-pc-linux-gnu"
 				   "x86_64-pc-windows-msvc"
 				   "x86_64-unknown-freebsd")
-		    :exclude-sources ("/usr/include/linux/types.h"
-				      "/usr/include/linux/magic.h"
-				      "/usr/include/asm-generic/int-ll64.h"
-				      "/usr/include/linux/posix_types.h"
-				      "/usr/include/asm/posix_types_64.h")
+		    :exclude-sources ("/usr/include/*")
+		    :include-definitions ("ioctl")
 		    :include-sources ("/usr/include/linux/ioctl.h")
 		    :sysincludes (list "/usr/include"
+				       "/usr/lib64/gcc/x86_64-pc-linux-gnu/4.9.3/include")
+		    :trace-c2ffi t
+		    )
+
+#+nil
+(autowrap:c-include "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/usb1.h"
+		    :spec-path (merge-pathnames
+				"quicklisp/local-projects/sb-look-ma-no-libusb/"
+				(user-homedir-pathname))
+		    :exclude-arch ("arm-pc-linux-gnu"
+				   "i386-unknown-freebsd"
+				   "i386-unknown-openbsd"
+				   "i686-apple-darwin9"
+				   "i686-pc-linux-gnu"
+				   "i686-pc-windows-msvc"
+				   "x86_64-apple-darwin9"
+				   "x86_64-unknown-openbsd"
+					;"x86_64-pc-linux-gnu"
+				   "x86_64-pc-windows-msvc"
+				   "x86_64-unknown-freebsd"
+				   "x86_64-unknown-openbsd")
+					; :exclude-sources
+		    #+nil
+		    ("/usr/include/linux/types.h"
+		     "/usr/include/linux/magic.h"
+		     "/usr/include/asm-generic/int-ll64.h"
+		     "/usr/include/linux/posix_types.h"
+		     "/usr/include/asm/posix_types_64.h")
+		    :include-sources ("/usr/include/linux/ioctl.h"
+				      "/usr/include/asm/ioctl.h"
+				      "/usr/include/asm-generic/ioctl.h")
+		    :sysincludes (list "/usr/include"
+				       "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/"
 				       "/usr/lib64/gcc/x86_64-pc-linux-gnu/4.9.3/include")
 		    :trace-c2ffi t
 		    )

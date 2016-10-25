@@ -8,7 +8,7 @@
 
 
 (progn
-  (with-open-file (s "usb0.h"
+  (with-open-file (s "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/usb0.h"
 		     :direction :output
 		     :if-does-not-exist :create
 		     :if-exists :supersede)
@@ -16,12 +16,13 @@
   (autowrap::run-check autowrap::*c2ffi-program*
 		       (autowrap::list "usb0.h"
 				       "-D" "null"
-				       "-M" "usb_macros.h"
+				       "-M" "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/usb_macros.h" 
 				       "-A" "x86_64-pc-linux-gnu"
+				       "-i" "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb"
 				       ))
 
   
-  (with-open-file (s "usb1.h"
+  (with-open-file (s "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/usb1.h"
 		     :direction :output
 		     :if-does-not-exist :create
 		     :if-exists :supersede)
@@ -29,8 +30,11 @@
     (format s "#include <sys/types.h>~%")
     (format s "#include <sys/stat.h>~%")
     (format s "#include <sys/ioctl.h>~%")
-    (format s "#include \"usb0.h\"~%")
-    (format s "#include \"usb_macros.h\"~%")))
+    (format s "#include <asm/ioctl.h>~%")
+    (format s "#include <linux/usbdevice_fs.h>~%")
+    ;(format s "#include \"usb0.h\"~%")
+    ;(format s "#include \"usb_macros.h\"~%")
+    ))
 
 (defparameter *spec-path* (merge-pathnames
 			   "quicklisp/local-projects/sb-look-ma-no-libusb/"
@@ -50,5 +54,5 @@
 		    :exclude-sources ("/usr/include/linux/types.h"
 				      "/usr/include/linux/magic.h")
 		    :include-sources ("/usr/include/linux/ioctl.h")
-		    ;:trace-c2ffi t
+		    :trace-c2ffi t
 		    )
