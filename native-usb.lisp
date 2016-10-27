@@ -87,37 +87,38 @@
 		    :trace-c2ffi t
 		    )
 
-(autowrap:c-include "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/usb1.h"
-		    :spec-path (merge-pathnames
-				"quicklisp/local-projects/sb-look-ma-no-libusb/"
-				(user-homedir-pathname))
-		    :exclude-arch ("arm-pc-linux-gnu"
-				   "i386-unknown-freebsd"
-				   "i386-unknown-openbsd"
-				   "i686-apple-darwin9"
-				   "i686-pc-linux-gnu"
-				   "i686-pc-windows-msvc"
-				   "x86_64-apple-darwin9"
-				   "x86_64-unknown-openbsd"
+(eval-when (:compile-toplevel)
+ (autowrap:c-include "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/usb1.h"
+		     :spec-path (merge-pathnames
+				 "quicklisp/local-projects/sb-look-ma-no-libusb/"
+				 (user-homedir-pathname))
+		     :exclude-arch ("arm-pc-linux-gnu"
+				    "i386-unknown-freebsd"
+				    "i386-unknown-openbsd"
+				    "i686-apple-darwin9"
+				    "i686-pc-linux-gnu"
+				    "i686-pc-windows-msvc"
+				    "x86_64-apple-darwin9"
+				    "x86_64-unknown-openbsd"
 					;"x86_64-pc-linux-gnu"
-				   "x86_64-pc-windows-msvc"
-				   "x86_64-unknown-freebsd"
-				   "x86_64-unknown-openbsd")
+				    "x86_64-pc-windows-msvc"
+				    "x86_64-unknown-freebsd"
+				    "x86_64-unknown-openbsd")
 					; :exclude-sources
-		    #+nil
-		    ("/usr/include/linux/types.h"
-		     "/usr/include/linux/magic.h"
-		     "/usr/include/asm-generic/int-ll64.h"
-		     "/usr/include/linux/posix_types.h"
-		     "/usr/include/asm/posix_types_64.h")
-		    :include-sources ("/usr/include/linux/ioctl.h"
-				      "/usr/include/asm/ioctl.h"
-				      "/usr/include/asm-generic/ioctl.h")
-		    :sysincludes (list "/usr/include"
-				       "/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/"
-				       "/usr/lib64/gcc/x86_64-pc-linux-gnu/4.9.3/include")
-		    :trace-c2ffi t
-		    )
+		     #+nil
+		     ("/usr/include/linux/types.h"
+		      "/usr/include/linux/magic.h"
+		      "/usr/include/asm-generic/int-ll64.h"
+		      "/usr/include/linux/posix_types.h"
+		      "/usr/include/asm/posix_types_64.h")
+		     :include-sources ("/usr/include/linux/ioctl.h"
+				       "/usr/include/asm/ioctl.h"
+				       "/usr/include/asm-generic/ioctl.h")
+		     :sysincludes (list "/usr/include"
+					"/home/martin/quicklisp/local-projects/sb-look-ma-no-libusb/"
+					"/usr/lib64/gcc/x86_64-pc-linux-gnu/4.9.3/include")
+		     :trace-c2ffi t
+		     ))
 
 
 #+nil
