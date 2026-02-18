@@ -1,8 +1,3 @@
-# Improved README.md
-
-Here's an improved version of the README.md that removes the auto-generated anchor links and uses clean markdown formatting:
-
-```markdown
 # Native USB
 
 A pure Common Lisp interface for Linux USB communication without libusb.
