@@ -1,4 +1,4 @@
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plops/sb-look-ma-no-libusb)
 
 # sb-look-ma-no-libusb
 
