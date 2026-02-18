@@ -1,4 +1,4 @@
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plops/sb-look-ma-no-libusb)
+
 
 # sb-look-ma-no-libusb
 
@@ -167,3 +167,55 @@ This library demonstrates that libusb isn't strictly necessary for USB communica
 - Reduces dependencies
 - Provides more direct control over USB operations
 - Serves as an educational example of low-level USB programming
+
+# USB Transfer Types and Operations Supported
+
+The **sb-look-ma-no-libusb** library provides varying levels of support for USB transfer types:
+
+## Fully Implemented Transfer Types
+
+### 1. Control Transfers
+The library implements synchronous control transfers through the `usb-control-msg` function.  
+
+### 2. Bulk Transfers
+The library supports both synchronous and asynchronous bulk transfers:
+- **Synchronous**: `usb-bulk-transfer` function  
+
+- **Asynchronous**: `usb-urb-bulk-async` function using URBs (USB Request Blocks)  
+
+## Transfer Types with Structure Support Only
+
+### 3. Interrupt Transfers
+The library defines the URB type constant for interrupt transfers (`+USBDEVFS-URB-TYPE-INTERRUPT+` with value 1), but no high-level implementation function exists.  
+
+### 4. Isochronous Transfers
+The library defines the URB type constant for isochronous transfers (`+USBDEVFS-URB-TYPE-ISO+` with value 0) and the `usbdevfs_iso_packet_desc` structure for per-packet descriptors, but no high-level implementation function exists.  
+
+The URB structure itself supports all four transfer types through its `type` field:  
+
+## Documented Limitations and Unsupported Features
+
+### Platform and Runtime Limitations
+
+1. **Linux-only**: The library relies on Linux's `usbdevice_fs` interface via ioctl calls  
+
+2. **SBCL-only**: Requires SBCL-specific internals (`sb-sys:with-pinned-objects` and `sb-sys:vector-sap`)  
+
+### Device Discovery Limitations
+
+3. **Multiple devices with same vendor-id**: There is a documented FIXME indicating that the library does not properly handle multiple devices with the same vendor-id  
+
+### Permission Requirements
+
+4. **USB device permissions**: Users must have read and write permissions for the USB device files  
+
+### Missing Functionality
+
+5. **No high-level interrupt/isochronous transfer functions**: While the FFI bindings include all necessary structures and constants for interrupt and isochronous transfers, the library only exports functions for control and bulk transfers  
+
+## Notes
+
+The library is intentionally minimal, providing direct access to the Linux kernel's USB device filesystem interface without the overhead of libusb. Users needing interrupt or isochronous transfers would need to implement their own functions following the pattern established by `usb-urb-bulk-async`, setting the appropriate URB type field to either `+USBDEVFS-URB-TYPE-INTERRUPT+` or `+USBDEVFS-URB-TYPE-ISO+`.
+
+
+
