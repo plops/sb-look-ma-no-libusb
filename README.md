@@ -1,48 +1,56 @@
-# Native USB
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plops/sb-look-ma-no-libusb)
 
-A pure Common Lisp interface for Linux USB communication without libusb.
+# sb-look-ma-no-libusb
+
+A pure Common Lisp interface for USB device communication on Linux, without requiring libusb. Direct access to USB devices through Linux's usbdevfs interface.
 
 ## Overview
 
-This library provides direct USB communication on Linux using native usbfs operations. It requires SBCL because it relies on SBCL-specific internals (`sb-sys:with-pinned-objects` and `sb-sys:vector-sap`). The library uses c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions. For AMD64 systems, pre-generated definitions are included, so c2ffi installation is optional.
+This library provides a native Common Lisp implementation for USB communication that bypasses libusb and directly uses Linux kernel USB device filesystem (usbdevfs) via ioctl calls. It's designed specifically for SBCL on Linux systems.  
 
-## Table of Contents
+**Key Features:**
+- No libusb dependency - pure Common Lisp implementation
+- Direct ioctl-based USB communication
+- Support for control and bulk transfers
+- Synchronous and asynchronous transfer modes
+- SBCL-specific optimizations using pinned memory
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [API Reference](#api-reference)
-- [Compilation](#compilation)
-- [Debugging](#debugging)
-- [Documentation Updates](#documentation-updates)
+## Requirements
+
+- **Operating System:** Linux
+- **Lisp Implementation:** SBCL (Steel Bank Common Lisp)
+- **Architecture:** Primarily AMD64 (x86_64), though other architectures may work with c2ffi
+- **Dependencies:** 
+  - cl-autowrap (automatically loaded via Quicklisp)
+  - c2ffi (optional, only needed for non-AMD64 architectures)  
 
 ## Installation
 
-### Prerequisites
-
-Ensure your user has read and write permissions for the USB device:
+### 1. Clone the Repository
 
 ```bash
-crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
-```
-
-### Install Steps
-
-1. Clone the repository and link it to your Quicklisp local-projects:
-
-```bash
-mkdir ~/stage/
+mkdir -p ~/stage/
 cd ~/stage/
 git clone https://github.com/plops/sb-look-ma-no-libusb
 ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
-```
+```  
 
-2. Load the library:
+### 2. Set USB Device Permissions
+
+Ensure your user has read and write permissions for USB devices:
+
+```bash
+# Check permissions (should be rw-rw-rw- or similar)
+ls -l /dev/bus/usb/001/002
+
+# If needed, add your user to the appropriate group or use udev rules
+```  
+
+### 3. Load the Library
 
 ```common-lisp
 (ql:quickload :native-usb)
 ```
-
-**Note:** During compilation, a few header files will be generated in `/tmp`.
 
 ## Usage
 
@@ -51,77 +59,111 @@ ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
 ```common-lisp
 (eval-when (:load-toplevel :execute :compile-toplevel)
   (ql:quickload :native-usb))
-
+  
 (in-package :native-usb)
 
+;; Open USB device with vendor ID 0x10c4 and product ID 0x87a0
 (with-open-usb (s #x10c4 :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
     (usb-control-msg s #xc0 #x22 0 0 buf)))
+```  
+
+### API Reference
+
+#### `with-open-usb` (macro)
+
+Opens a USB device by scanning for matching vendor and product IDs.
+
+**Syntax:**
+```common-lisp
+(with-open-usb (stream vendor-id &key (product-id 0)) &body body)
 ```
 
-## API Reference
+**Parameters:**
+- `stream` - Symbol bound to the USB file stream
+- `vendor-id` - USB vendor ID (16-bit unsigned integer)
+- `product-id` - USB product ID (16-bit unsigned integer, optional)  
 
-### `WITH-OPEN-USB`
+#### `usb-control-msg` (function)
 
-**Macro:** `(with-open-usb (stream vendor-id &key (product-id 0)) &body body)`
+Sends a synchronous USB control transfer.
 
-Scans all USB devices for a matching vendor-id, opens the usbfs file, and makes `stream` available within the body. The file descriptor and pathname can be obtained from `stream` using `sb-posix:file-descriptor` and `pathname`.
+**Syntax:**
+```common-lisp
+(usb-control-msg stream requesttype request value index buffer &key (timeout-ms 1000))
+```
 
-### `USB-CONTROL-MSG`
+**Returns:** Buffer with response data and timestamp in nanoseconds  
 
-**Function:** `(usb-control-msg stream requesttype request value index buffer &key (timeout-ms 1000))`
+#### `usb-bulk-transfer` (function)
 
-Sends a synchronous USB control message.
+Initiates a synchronous USB bulk transfer (read or write depending on endpoint).
+
+**Syntax:**
+```common-lisp
+(usb-bulk-transfer stream ep buffer &key (timeout-ms 1000))
+```
 
 **Parameters:**
-- `stream`: USB stream opened with `with-open-usb`
-- `requesttype`: Request type byte
-- `request`: Request byte
-- `value`: 16-bit value
-- `index`: 16-bit index
-- `buffer`: Byte array for data transfer
-- `timeout-ms`: Timeout in milliseconds (default: 1000)
+- `ep` - Endpoint number (bit 7 determines direction: 0=OUT, 1=IN)
+- `buffer` - Byte array for data transfer 
 
-### `USB-BULK-TRANSFER`
+#### `usb-urb-bulk-async` (function)
 
-**Function:** `(usb-bulk-transfer stream ep buffer &key (timeout-ms 1000))`
+Submits an asynchronous USB bulk transfer using URBs (USB Request Blocks).
 
-Initiates a synchronous USB bulk transfer (read or write, depending on the endpoint).
+#### `usb-urb-reap-ndelay` (function)
 
-**Parameters:**
-- `stream`: USB stream opened with `with-open-usb`
-- `ep`: Endpoint address
-- `buffer`: Byte array for data transfer
-- `timeout-ms`: Timeout in milliseconds (default: 1000)
+Reaps completed asynchronous URBs without blocking.
 
-## Compilation
+## How It Works
 
-This library uses c2ffi to parse the Linux kernel header file `linux/usbdevice_fs.h` and generate the foreign function interface for usbdevfs. 
+The library operates by:
 
-For **AMD64 systems**, the pre-generated FFI definitions (`generated-ffi-amd64.lisp`) are included, so installing c2ffi is not required. Simply load `native-usb` and the pre-generated definitions will be used automatically.
+1. **Device Discovery:** Scanning `/sys/bus/usb/devices/` to find USB devices by vendor/product ID 
 
-For **other architectures**, you will need to install c2ffi, and the library will generate the appropriate FFI definitions during compilation. Generated files are placed in `/tmp`.
+2. **Direct File Access:** Opening `/dev/bus/usb/BUS/DEV` as a file stream 
+
+3. **ioctl Communication:** Using ioctl system calls with Linux USB device filesystem structures 
+
+4. **Memory Pinning:** Leveraging SBCL's `sb-sys:with-pinned-objects` to ensure buffer stability during transfers
+
+## FFI Generation
+
+The library uses c2ffi and cl-autowrap to parse Linux USB headers and generate Foreign Function Interface bindings. Pre-generated bindings for AMD64 are included, so c2ffi is only required for other architectures. 
+
+The FFI generation process is defined in:
 
 ## Debugging
 
-For debugging and functional verification, you can use:
+For debugging and protocol verification:
 
 ```bash
+# Load USB monitoring module
 sudo modprobe usbmon
-wireshark
-```
 
-This enables USB monitoring that can be viewed in Wireshark for packet inspection.
+# Use Wireshark to capture USB traffic
+wireshark
+```  
 
 ## Documentation Updates
 
-This library uses [mgl-pax](https://github.com/melisgl/mgl-pax) for documentation generation. 
+This README is generated using MGL-PAX. To update documentation after modifying docstrings or adding functions:
 
-To update the documentation after modifying docstrings or adding new functions:
+1. Load `gendoc.lisp`
+2. Call `(update-markdown-readme)`  
 
-1. Edit the docstrings in the source code
-2. Run the code in `gendoc.lisp` to regenerate `README.md`
+## Technical Details
 
-```common-lisp
-(load "gendoc.lisp")
-```
+### Why SBCL-Specific?
+
+The library relies on SBCL-specific features:
+- `sb-sys:with-pinned-objects` - Prevents garbage collector from moving memory during USB transfers
+- `sb-sys:vector-sap` - Obtains System Area Pointers to byte arrays for direct memory access
+
+### Why No libusb?
+
+This library demonstrates that libusb isn't strictly necessary for USB communication on Linux. By directly using the kernel's usbdevfs interface, it:
+- Reduces dependencies
+- Provides more direct control over USB operations
+- Serves as an educational example of low-level USB programming
