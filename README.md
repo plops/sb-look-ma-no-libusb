@@ -1,99 +1,132 @@
-<a id='x-28NATIVE-USB-3A-40NATIVE-USB-MANUAL-20MGL-PAX-3ASECTION-29'></a>
+# Improved README.md
 
-# Native USB manual
+Here's an improved version of the README.md that removes the auto-generated anchor links and uses clean markdown formatting:
+
+```markdown
+# Native USB
+
+A pure Common Lisp interface for Linux USB communication without libusb.
+
+## Overview
+
+This library provides direct USB communication on Linux using native usbfs operations. It requires SBCL because it relies on SBCL-specific internals (`sb-sys:with-pinned-objects` and `sb-sys:vector-sap`). The library uses c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions. For AMD64 systems, pre-generated definitions are included, so c2ffi installation is optional.
 
 ## Table of Contents
 
-- [1 Installation][33d1]
-- [2 Usage][4e5e]
-- [3 Compilation][9722]
-- [4 Updating Documentation][77a6]
+- [Installation](#installation)
+- [Usage](#usage)
+- [API Reference](#api-reference)
+- [Compilation](#compilation)
+- [Debugging](#debugging)
+- [Documentation Updates](#documentation-updates)
 
-###### \[in package NATIVE-USB\]
-This is an pure Common Lisp interface for Linux USB. It requires SBCL because I rely on its internals `sb-sys:with-pinned-objects` and `sb-sys:vector-sap`. I use c2ffi and cl-autowrap to obtain the required `IOCTL` type and constant definitions. However, if you are using AMD64 you might not have to install c2ffi.
+## Installation
 
-For debugging and functional verification I use `sudo modprobe usbmon` and `wireshark`.
+### Prerequisites
 
-<a id='x-28NATIVE-USB-3A-40INSTALL-SEC-20MGL-PAX-3ASECTION-29'></a>
+Ensure your user has read and write permissions for the USB device:
 
-## 1 Installation
-
-Make sure your user has read and write permissions for the USB device, e.g.:
-
-```
+```bash
 crw-rw-rw- 1 root root 189, 1 May 23 14:49 /dev/bus/usb/001/002
 ```
 
-Open the a USB stream using the macro [`WITH-OPEN-USB`][977e] and send control
-or bulk messages. Example: 
+### Install Steps
 
-The following commands should install this library into a local
-quicklisp installation.  Note that a few header files will be
-generated in /tmp.
+1. Clone the repository and link it to your Quicklisp local-projects:
 
-```
+```bash
 mkdir ~/stage/
 cd ~/stage/
 git clone https://github.com/plops/sb-look-ma-no-libusb
 ln -s ~/stage/sb-look-ma-no-libusb ~/quicklisp/local-projects/
 ```
 
+2. Load the library:
 
-<a id='x-28NATIVE-USB-3A-40USAGE-SEC-20MGL-PAX-3ASECTION-29'></a>
+```common-lisp
+(ql:quickload :native-usb)
+```
 
-## 2 Usage
+**Note:** During compilation, a few header files will be generated in `/tmp`.
+
+## Usage
+
+### Basic Example
 
 ```common-lisp
 (eval-when (:load-toplevel :execute :compile-toplevel)
   (ql:quickload :native-usb))
+
 (in-package :native-usb)
+
 (with-open-usb (s #x10c4 :product-id #x87a0)
   (let ((buf (make-array 4 :element-type '(unsigned-byte 8))))
     (usb-control-msg s #xc0 #x22 0 0 buf)))
 ```
 
+## API Reference
 
-<a id='x-28NATIVE-USB-3AWITH-OPEN-USB-20-28MGL-PAX-3AMACRO-29-29'></a>
+### `WITH-OPEN-USB`
 
-- [macro] **WITH-OPEN-USB** *(STREAM VENDOR-ID &KEY (PRODUCT-ID 0)) &BODY BODY*
+**Macro:** `(with-open-usb (stream vendor-id &key (product-id 0)) &body body)`
 
-    Scan all USB devices for matching vendor-id, open the usbfs file
-    and make `STREAM` available. The filedescriptor and pathname can be
-    obtained from `STREAM` using `SB-POSIX:FILE-DESCRIPTOR` and `PATHNAME`.
+Scans all USB devices for a matching vendor-id, opens the usbfs file, and makes `stream` available within the body. The file descriptor and pathname can be obtained from `stream` using `sb-posix:file-descriptor` and `pathname`.
 
-<a id='x-28NATIVE-USB-3AUSB-CONTROL-MSG-20FUNCTION-29'></a>
+### `USB-CONTROL-MSG`
 
-- [function] **USB-CONTROL-MSG** *STREAM REQUESTTYPE REQUEST VALUE INDEX BUFFER &KEY (TIMEOUT-MS 1000)*
+**Function:** `(usb-control-msg stream requesttype request value index buffer &key (timeout-ms 1000))`
 
-    Send a synchronous control message.
+Sends a synchronous USB control message.
 
-<a id='x-28NATIVE-USB-3AUSB-BULK-TRANSFER-20FUNCTION-29'></a>
+**Parameters:**
+- `stream`: USB stream opened with `with-open-usb`
+- `requesttype`: Request type byte
+- `request`: Request byte
+- `value`: 16-bit value
+- `index`: 16-bit index
+- `buffer`: Byte array for data transfer
+- `timeout-ms`: Timeout in milliseconds (default: 1000)
 
-- [function] **USB-BULK-TRANSFER** *STREAM EP BUFFER &KEY (TIMEOUT-MS 1000)*
+### `USB-BULK-TRANSFER`
 
-    Initiate a synchronous USB bulk transfer (read or write, depending on `EP`).
+**Function:** `(usb-bulk-transfer stream ep buffer &key (timeout-ms 1000))`
 
-<a id='x-28NATIVE-USB-3A-40COMPILATION-SEC-20MGL-PAX-3ASECTION-29'></a>
+Initiates a synchronous USB bulk transfer (read or write, depending on the endpoint).
 
-## 3 Compilation
+**Parameters:**
+- `stream`: USB stream opened with `with-open-usb`
+- `ep`: Endpoint address
+- `buffer`: Byte array for data transfer
+- `timeout-ms`: Timeout in milliseconds (default: 1000)
 
-This code uses C2FFI to parse the header file linux/usbdevice\_fs.h
-and generate the foreign function interface for usbdevfs. It
-generates a few files in /tmp. If your architecture is AMD64,
-running C2FFI again is not required. It should suffice to load
-native-usb-ffi.lisp with the definitions that C2FFI generated on my
-system. In this case the c2ffi binary is not required.
+## Compilation
 
-<a id='x-28NATIVE-USB-3A-40DOC-SEC-20MGL-PAX-3ASECTION-29'></a>
+This library uses c2ffi to parse the Linux kernel header file `linux/usbdevice_fs.h` and generate the foreign function interface for usbdevfs. 
 
-## 4 Updating Documentation
+For **AMD64 systems**, the pre-generated FFI definitions (`generated-ffi-amd64.lisp`) are included, so installing c2ffi is not required. Simply load `native-usb` and the pre-generated definitions will be used automatically.
 
-I use mgl-pax to generate the documentation. Whenever docstrings
-have been changed or new functions were added, update and run the
-code in gendoc.lisp to update the README.md file.
+For **other architectures**, you will need to install c2ffi, and the library will generate the appropriate FFI definitions during compilation. Generated files are placed in `/tmp`.
 
-  [33d1]: #x-28NATIVE-USB-3A-40INSTALL-SEC-20MGL-PAX-3ASECTION-29 "Installation"
-  [4e5e]: #x-28NATIVE-USB-3A-40USAGE-SEC-20MGL-PAX-3ASECTION-29 "Usage"
-  [77a6]: #x-28NATIVE-USB-3A-40DOC-SEC-20MGL-PAX-3ASECTION-29 "Updating Documentation"
-  [9722]: #x-28NATIVE-USB-3A-40COMPILATION-SEC-20MGL-PAX-3ASECTION-29 "Compilation"
-  [977e]: #x-28NATIVE-USB-3AWITH-OPEN-USB-20-28MGL-PAX-3AMACRO-29-29 "(NATIVE-USB:WITH-OPEN-USB (MGL-PAX:MACRO))"
+## Debugging
+
+For debugging and functional verification, you can use:
+
+```bash
+sudo modprobe usbmon
+wireshark
+```
+
+This enables USB monitoring that can be viewed in Wireshark for packet inspection.
+
+## Documentation Updates
+
+This library uses [mgl-pax](https://github.com/melisgl/mgl-pax) for documentation generation. 
+
+To update the documentation after modifying docstrings or adding new functions:
+
+1. Edit the docstrings in the source code
+2. Run the code in `gendoc.lisp` to regenerate `README.md`
+
+```common-lisp
+(load "gendoc.lisp")
+```
